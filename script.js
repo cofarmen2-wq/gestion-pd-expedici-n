@@ -1,6 +1,5 @@
-// Remplaza este valor con la URL de tu aplicación web publicada en Google Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLKlHseNQ/exec";
-
+// URL corregida con l minúscula
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLlHseNQ/exec";
 
 const documentos = [];
 let lectorQr = null;
@@ -15,12 +14,15 @@ const rutasPorTurno = {
 };
 
 function mostrarLoading(mensaje = "Cargando...") {
-  document.getElementById("loadingText").textContent = mensaje;
-  document.getElementById("loadingOverlay").classList.remove("hidden");
+  const overlay = document.getElementById("loadingOverlay");
+  const text = document.getElementById("loadingText");
+  if (text) text.textContent = mensaje;
+  if (overlay) overlay.classList.remove("hidden");
 }
 
 function ocultarLoading() {
-  document.getElementById("loadingOverlay").classList.add("hidden");
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.classList.add("hidden");
 }
 
 function obtenerTurno(fecha = new Date()) {
@@ -51,7 +53,6 @@ function renderizarDocumentos() {
     const item = document.createElement("li");
     item.className = "doc-item";
     
-    // Etiqueta distintiva si el documento específico es TRANSFER
     const tagTransfer = documento.esTransfer ? " ⚠️ [TRANSFER]" : "";
     item.textContent = `${documento.codigoDoc} (${documento.tipoDoc})${tagTransfer}`;
     
@@ -89,7 +90,6 @@ function agregarDocumento(codigoDoc) {
     transferChecklist: null 
   };
 
-  // Se desmarca el checkbox para evitar marcar por error el siguiente documento
   checkTransferElem.checked = false;
 
   if (documento.esTransfer) {
@@ -140,7 +140,6 @@ function guardarLote(evento) {
   const boton = document.getElementById("btnGuardar");
   boton.disabled = true;
 
-  // Activar pantalla de carga visual
   mostrarLoading(`Registrando lote (${documentos.length} documentos)...`);
 
   const datosLote = { 
@@ -154,12 +153,12 @@ function guardarLote(evento) {
   fetch(SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(datosLote)
   })
   .then(() => {
     ocultarLoading();
-    alert("¡Lote enviado y registrado con éxito en Google Sheets!");
+    alert("¡Lote registrado con éxito en Google Sheets!");
     documentos.length = 0;
     renderizarDocumentos();
     document.getElementById("mainForm").reset();
