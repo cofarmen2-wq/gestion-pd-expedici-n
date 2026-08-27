@@ -1,6 +1,7 @@
 // Remplaza este valor con la URL de tu aplicación web publicada en Google Apps Script
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLKlHseNQ/exec";
 
+
 const documentos = [];
 let lectorQr = null;
 let documentoTransferPendiente = null;
@@ -12,6 +13,15 @@ const rutasPorTurno = {
   NOCHE: ["San Juan", "Zona sur (Noche: San Rafael 1; San Rafael 2; G. Alvear; Malargüe)", "SAN LUIS"],
   "FUERA DE TURNO": []
 };
+
+function mostrarLoading(mensaje = "Cargando...") {
+  document.getElementById("loadingText").textContent = mensaje;
+  document.getElementById("loadingOverlay").classList.remove("hidden");
+}
+
+function ocultarLoading() {
+  document.getElementById("loadingOverlay").classList.add("hidden");
+}
 
 function obtenerTurno(fecha = new Date()) {
   const minutos = fecha.getHours() * 60 + fecha.getMinutes();
@@ -27,7 +37,6 @@ function actualizarRutas() {
   document.getElementById("turnoBadge").textContent = `TURNO ${turno}`;
   selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true));
   selectorRuta.options[0].disabled = true;
-  
   if (rutasPorTurno[turno]) {
     rutasPorTurno[turno].forEach(ruta => selectorRuta.add(new Option(ruta, ruta)));
   }
@@ -37,10 +46,15 @@ function renderizarDocumentos() {
   const lista = document.getElementById("listaDocs");
   document.getElementById("countDocs").textContent = documentos.length;
   lista.replaceChildren();
+
   documentos.forEach((documento, indice) => {
     const item = document.createElement("li");
     item.className = "doc-item";
-    item.textContent = `${documento.codigoDoc} - ${documento.tipoDoc}${documento.esTransfer ? " - TRANSFER" : ""}`;
+    
+    // Etiqueta distintiva si el documento específico es TRANSFER
+    const tagTransfer = documento.esTransfer ? " ⚠️ [TRANSFER]" : "";
+    item.textContent = `${documento.codigoDoc} (${documento.tipoDoc})${tagTransfer}`;
+    
     const eliminar = document.createElement("button");
     eliminar.type = "button";
     eliminar.className = "btn-close";
@@ -49,6 +63,7 @@ function renderizarDocumentos() {
       documentos.splice(indice, 1); 
       renderizarDocumentos(); 
     });
+
     item.appendChild(eliminar);
     lista.appendChild(item);
   });
@@ -58,17 +73,24 @@ function agregarDocumento(codigoDoc) {
   if (pausadoEscaneo) return;
 
   const codigo = String(codigoDoc || "").trim();
-  if (!codigo || documentos.some(documento => documento.codigoDoc === codigo)) return;
+  if (!codigo || documentos.some(doc => doc.codigoDoc === codigo)) return;
 
   pausadoEscaneo = true;
-  setTimeout(() => { pausadoEscaneo = false; }, 1500);
+  setTimeout(() => { pausadoEscaneo = false; }, 1200);
+
+  const tipoDoc = document.querySelector("input[name='tipoDoc']:checked").value;
+  const checkTransferElem = document.getElementById("checkEsTransfer");
+  const esTransfer = checkTransferElem.checked;
 
   const documento = { 
     codigoDoc: codigo, 
-    tipoDoc: document.querySelector("input[name='tipoDoc']:checked").value, 
-    esTransfer: document.getElementById("checkEsTransfer").checked, 
+    tipoDoc: tipoDoc, 
+    esTransfer: esTransfer, 
     transferChecklist: null 
   };
+
+  // Se desmarca el checkbox para evitar marcar por error el siguiente documento
+  checkTransferElem.checked = false;
 
   if (documento.esTransfer) {
     documentoTransferPendiente = documento;
@@ -76,7 +98,7 @@ function agregarDocumento(codigoDoc) {
     document.getElementById("modalTransfer").classList.remove("hidden");
     return;
   }
-  
+
   documentos.push(documento);
   renderizarDocumentos();
 }
@@ -92,7 +114,7 @@ function alternarCamara() {
     return;
   }
   if (typeof Html5Qrcode === "undefined") { 
-    alert("No se pudo cargar el escáner QR."); 
+    alert("No se pudo cargar la librería del escáner QR."); 
     return; 
   }
   lectorQr = new Html5Qrcode("reader");
@@ -111,54 +133,44 @@ function guardarLote(evento) {
   const ruta = document.getElementById("ruta").value;
   
   if (!operario || !ruta || !documentos.length) { 
-    alert("Seleccione operario, ruta y al menos un documento."); 
+    alert("Seleccione operario, ruta y escanee al menos un documento."); 
     return; 
   }
 
   const boton = document.getElementById("btnGuardar");
   boton.disabled = true;
 
+  // Activar pantalla de carga visual
+  mostrarLoading(`Registrando lote (${documentos.length} documentos)...`);
+
   const datosLote = { 
     accion: "guardarRegistros",
-    operario, 
-    ruta, 
+    operario: operario, 
+    ruta: ruta, 
     turno: obtenerTurno(), 
-    documentos 
+    documentos: documentos 
   };
 
-  if (typeof google !== "undefined" && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(() => {
-      alert("Lote registrado correctamente.");
-      documentos.splice(0);
-      renderizarDocumentos();
-      document.getElementById("mainForm").reset();
-      actualizarRutas();
-      boton.disabled = false;
-    }).withFailureHandler(error => {
-      alert(`No se pudo guardar: ${error.message || error}`);
-      boton.disabled = false;
-    }).guardarRegistros(datosLote);
-  } else {
-    // Envío por HTTP POST hacia Apps Script cuando corre en GitHub Pages
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(datosLote)
-    })
-    .then(() => {
-      alert("Lote registrado correctamente.");
-      documentos.splice(0);
-      renderizarDocumentos();
-      document.getElementById("mainForm").reset();
-      actualizarRutas();
-      boton.disabled = false;
-    })
-    .catch(error => {
-      alert(`Error al guardar: ${error}`);
-      boton.disabled = false;
-    });
-  }
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datosLote)
+  })
+  .then(() => {
+    ocultarLoading();
+    alert("¡Lote enviado y registrado con éxito en Google Sheets!");
+    documentos.length = 0;
+    renderizarDocumentos();
+    document.getElementById("mainForm").reset();
+    actualizarRutas();
+    boton.disabled = false;
+  })
+  .catch(error => {
+    ocultarLoading();
+    alert(`Error de conexión al guardar el lote: ${error}`);
+    boton.disabled = false;
+  });
 }
 
 function confirmarTransfer() {
@@ -170,7 +182,6 @@ function confirmarTransfer() {
   };
   documentos.push(documentoTransferPendiente);
   documentoTransferPendiente = null;
-  document.getElementById("checkEsTransfer").checked = false;
   document.getElementById("modalTransfer").classList.add("hidden");
   renderizarDocumentos();
 }
@@ -185,7 +196,7 @@ function renderizarHistorial(historial) {
   historial.forEach(registro => {
     const tarjeta = document.createElement("div");
     tarjeta.className = "history-card";
-    tarjeta.textContent = `${registro.operario} | ${registro.ruta} | Puesta: ${registro.puestaDisposicion || "-"} | Recepción: ${registro.recepcion || "Pendiente"}`;
+    tarjeta.textContent = `${registro.fechaHora} | ${registro.operario} | Doc: ${registro.doc} | Estado: ${registro.recepcion}`;
     contenedor.appendChild(tarjeta);
   });
 }
@@ -193,19 +204,18 @@ function renderizarHistorial(historial) {
 function abrirHistorial() {
   document.getElementById("drawer").classList.remove("hidden");
   document.getElementById("drawerBackdrop").classList.remove("hidden");
-  
-  if (typeof google !== "undefined" && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(renderizarHistorial).withFailureHandler(() => {
-      document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
-    }).obtenerHistorialReciente();
-  } else {
-    fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
-      .then(res => res.json())
-      .then(historial => renderizarHistorial(historial))
-      .catch(() => {
-        document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
-      });
-  }
+  mostrarLoading("Cargando historial...");
+
+  fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
+    .then(res => res.json())
+    .then(historial => {
+      ocultarLoading();
+      renderizarHistorial(historial);
+    })
+    .catch(() => {
+      ocultarLoading();
+      document.getElementById("historialContent").textContent = "No se pudo sincronizar el historial.";
+    });
 }
 
 function cerrarHistorial() {
