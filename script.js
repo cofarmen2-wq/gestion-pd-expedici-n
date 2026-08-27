@@ -1,6 +1,10 @@
+// Remplaza este valor con la URL de tu aplicación web publicada en Google Apps Script
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLKlHseNQ/exec";
+
 const documentos = [];
 let lectorQr = null;
 let documentoTransferPendiente = null;
+let pausadoEscaneo = false;
 
 const rutasPorTurno = {
   MAÑANA: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"],
@@ -41,27 +45,38 @@ function renderizarDocumentos() {
     eliminar.type = "button";
     eliminar.className = "btn-close";
     eliminar.textContent = "✕";
-    eliminar.addEventListener("click", () => { documentos.splice(indice, 1); renderizarDocumentos(); });
+    eliminar.addEventListener("click", () => { 
+      documentos.splice(indice, 1); 
+      renderizarDocumentos(); 
+    });
     item.appendChild(eliminar);
     lista.appendChild(item);
   });
 }
 
 function agregarDocumento(codigoDoc) {
+  if (pausadoEscaneo) return;
+
   const codigo = String(codigoDoc || "").trim();
   if (!codigo || documentos.some(documento => documento.codigoDoc === codigo)) return;
+
+  pausadoEscaneo = true;
+  setTimeout(() => { pausadoEscaneo = false; }, 1500);
+
   const documento = { 
     codigoDoc: codigo, 
     tipoDoc: document.querySelector("input[name='tipoDoc']:checked").value, 
     esTransfer: document.getElementById("checkEsTransfer").checked, 
     transferChecklist: null 
   };
+
   if (documento.esTransfer) {
     documentoTransferPendiente = documento;
     document.getElementById("transferDocLabel").textContent = `Documento: ${codigo}`;
     document.getElementById("modalTransfer").classList.remove("hidden");
     return;
   }
+  
   documentos.push(documento);
   renderizarDocumentos();
 }
@@ -76,20 +91,40 @@ function alternarCamara() {
     boton.textContent = "📷 Iniciar Escáner QR";
     return;
   }
-  if (typeof Html5Qrcode === "undefined") { alert("No se pudo cargar el escáner QR."); return; }
+  if (typeof Html5Qrcode === "undefined") { 
+    alert("No se pudo cargar el escáner QR."); 
+    return; 
+  }
   lectorQr = new Html5Qrcode("reader");
   contenedor.classList.remove("hidden");
   boton.textContent = "Detener Escáner QR";
-  lectorQr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, codigo => agregarDocumento(codigo)).catch(() => alert("No se pudo acceder a la cámara."));
+  lectorQr.start(
+    { facingMode: "environment" }, 
+    { fps: 10, qrbox: 250 }, 
+    codigo => agregarDocumento(codigo)
+  ).catch(() => alert("No se pudo acceder a la cámara."));
 }
 
 function guardarLote(evento) {
   evento.preventDefault();
   const operario = document.getElementById("operario").value;
   const ruta = document.getElementById("ruta").value;
-  if (!operario || !ruta || !documentos.length) { alert("Seleccione operario, ruta y al menos un documento."); return; }
+  
+  if (!operario || !ruta || !documentos.length) { 
+    alert("Seleccione operario, ruta y al menos un documento."); 
+    return; 
+  }
+
   const boton = document.getElementById("btnGuardar");
   boton.disabled = true;
+
+  const datosLote = { 
+    accion: "guardarRegistros",
+    operario, 
+    ruta, 
+    turno: obtenerTurno(), 
+    documentos 
+  };
 
   if (typeof google !== "undefined" && google.script && google.script.run) {
     google.script.run.withSuccessHandler(() => {
@@ -102,17 +137,27 @@ function guardarLote(evento) {
     }).withFailureHandler(error => {
       alert(`No se pudo guardar: ${error.message || error}`);
       boton.disabled = false;
-    }).guardarRegistros({ operario, ruta, turno: obtenerTurno(), documentos });
+    }).guardarRegistros(datosLote);
   } else {
-    // Simulación para GitHub Pages / Entorno local
-    setTimeout(() => {
-      alert("Lote registrado correctamente (Modo simulación Web).");
+    // Envío por HTTP POST hacia Apps Script cuando corre en GitHub Pages
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datosLote)
+    })
+    .then(() => {
+      alert("Lote registrado correctamente.");
       documentos.splice(0);
       renderizarDocumentos();
       document.getElementById("mainForm").reset();
       actualizarRutas();
       boton.disabled = false;
-    }, 500);
+    })
+    .catch(error => {
+      alert(`Error al guardar: ${error}`);
+      boton.disabled = false;
+    });
   }
 }
 
@@ -125,6 +170,7 @@ function confirmarTransfer() {
   };
   documentos.push(documentoTransferPendiente);
   documentoTransferPendiente = null;
+  document.getElementById("checkEsTransfer").checked = false;
   document.getElementById("modalTransfer").classList.add("hidden");
   renderizarDocumentos();
 }
@@ -153,10 +199,12 @@ function abrirHistorial() {
       document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
     }).obtenerHistorialReciente();
   } else {
-    // Datos de demostración en GitHub Pages
-    renderizarHistorial([
-      { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-27 09:00:00", recepcion: "RECEPCIONADO" }
-    ]);
+    fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
+      .then(res => res.json())
+      .then(historial => renderizarHistorial(historial))
+      .catch(() => {
+        document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
+      });
   }
 }
 
