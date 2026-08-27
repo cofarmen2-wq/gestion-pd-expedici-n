@@ -3,164 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Mercadería</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .logo-cofar {
-      max-height: 45px;
-      width: auto;
-      object-fit: contain;
-      transition: transform 0.3s ease, filter 0.3s ease;
-      cursor: pointer;
-    }
-    .logo-cofar:hover {
-      transform: scale(1.08);
-      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
-    }
-
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(4px);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 99999;
-      color: #ffffff;
-    }
-    .loading-overlay.hidden {
-      display: none !important;
-    }
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(255, 255, 255, 0.2);
-      border-top: 5px solid #38bdf8;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 15px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+  <title>Gestión de Mercadería - Puesta a Disposición</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body style="background-color: #0f172a; color: #f8fafc; font-family: sans-serif; margin: 0; padding: 0;">
 
-  <!-- Overlay de Carga Visual -->
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <h3 id="loadingText">Registrando lote en Google Sheets...</h3>
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR (Estilo AppSheet / Vistas separadas) -->
+  <div style="display: flex; background: #1e293b; padding: 15px; gap: 15px; justify-content: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+    <button type="button" id="btnMenuRegistro" onclick="cambiarVista('registro')" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px;">📋 REGISTRO DE PD</button>
+    <button type="button" id="btnMenuRecepcion" onclick="cambiarVista('recepcion')" style="background: #64748b; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px;">📥 RECEPCIÓN DE DOCUMENTACIÓN</button>
   </div>
 
-  <!-- Barra Superior -->
-  <header class="top-bar">
-    <div class="logo-box">
-      <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
-    </div>
-    <div class="title-box">
-      <h2>Logística Puesta a Disposición</h2>
-      <span id="turnoBadge" class="badge">TURNO -</span>
-    </div>
-    <button type="button" class="btn-drawer-open" id="btnOpenDrawer">☰ Historial</button>
-  </header>
-
-  <main class="container">
-    <form id="mainForm">
-      
-      <!-- Controles Principales -->
-      <div class="card">
-        <div class="form-group">
-          <label for="operario">Operario de Ingreso</label>
-          <select id="operario" required>
-            <option value="" disabled selected>Seleccione operario...</option>
-            <option value="Operario 1">Operario 1</option>
-            <option value="Operario 2">Operario 2</option>
-            <option value="Operario 3">Operario 3</option>
-            <option value="Operario 4">Operario 4</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="ruta">Ruta de Reparto</label>
-          <select id="ruta" required>
-            <option value="" disabled selected>Seleccione ruta...</option>
-          </select>
-        </div>
+  <!-- VISTA 1: REGISTRO DE PD -->
+  <div id="vistaRegistroPD" class="view-section" style="padding: 20px; max-width: 800px; margin: auto;">
+    <h2 style="border-bottom: 2px solid #334155; padding-bottom: 10px;">Registro de Puesta a Disposición (Salidas)</h2>
+    
+    <div style="background: #1e293b; padding: 20px; border-radius: 10px; margin-top: 15px;">
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Operario:</label>
+        <input type="text" id="inputOperario" placeholder="Nombre del operario" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
       </div>
-
-      <!-- Zona de Escaneo Múltiple -->
-      <div class="card scan-card">
-        <h3>Escaneo de Documentación QR</h3>
-        <div class="scan-type-selector">
-          <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
-          <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
-        </div>
-
-        <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
-        <div id="reader-container" class="reader-container hidden">
-          <div id="reader"></div>
-        </div>
-
-        <div class="transfer-toggle">
-          <label>
-            <input type="checkbox" id="checkEsTransfer"> Marcar Próximo Escaneo como TRANSFER
-          </label>
-        </div>
-
-        <!-- Lista de Documentos Escaneados en Cola -->
-        <div class="scanned-list-box">
-          <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
-          <ul id="listaDocs" class="doc-list"></ul>
-        </div>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ruta de Reparto:</label>
+        <input type="text" id="inputRuta" placeholder="Ej: RUTA 01" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
       </div>
-
-      <!-- Botón de Guardado -->
-      <button type="submit" id="btnGuardar" class="btn-submit">GUARDAR Y REGISTRAR LOTE</button>
-
-    </form>
-  </main>
-
-  <!-- Drawer Lateral Historial -->
-  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
-  <aside id="drawer" class="drawer hidden">
-    <div class="drawer-header">
-      <h3>Historial Reciente</h3>
-      <button id="btnCloseDrawer" class="btn-close">✕</button>
-    </div>
-    <div id="historialContent" class="drawer-body">
-      <p class="loading-text">Cargando datos...</p>
-    </div>
-  </aside>
-
-  <!-- Modal Push Checklist para TRANSFER -->
-  <div id="modalTransfer" class="modal-backdrop hidden">
-    <div class="modal">
-      <h3>Checklist Documentación TRANSFER</h3>
-      <p id="transferDocLabel" class="doc-badge-modal"></p>
-      
-      <div class="checklist-group">
-        <label>1. ¿Firma y sello correctos?
-          <select id="chk1"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>2. ¿Estado de la carga verificado?
-          <select id="chk2"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>3. ¿Número de precinto coincide?
-          <select id="chk3"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Turno:</label>
+        <input type="text" id="inputTurno" placeholder="Ej: Mañana / Tarde" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
       </div>
-
-      <button type="button" id="btnConfirmTransfer" class="btn-submit">Confirmar Documento Transfer</button>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Escanear / Agregar Documento de Salida:</label>
+        <input type="text" id="inputDocumentoSalida" placeholder="Código de documento..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
+      </div>
+      <button type="button" id="btnGuardarTodo" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%;">Guardar Lote de Salidas</button>
     </div>
   </div>
+
+  <!-- VISTA 2: RECEPCIÓN DE DOCUMENTACIÓN -->
+  <div id="vistaRecepcionDoc" class="view-section hidden" style="padding: 30px; max-width: 600px; margin: auto;">
+    <div style="background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <h2 style="margin-top: 0; border-bottom: 2px solid #334155; padding-bottom: 10px;">Recepción de Documentación</h2>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Escanee el documento que regresa. El sistema buscará automáticamente en la Columna E y estampará la hora en la Columna H.</p>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Código de Documento:</label>
+        <input type="text" id="inputEscaneoIngresoUnico" placeholder="Escanee código aquí..." autofocus style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box;">
+      </div>
+      
+      <button type="button" id="btnProcesarIngresoUnico" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px;">Registrar Ingreso</button>
+      
+      <div id="mensajeEstadoRecepcion" style="margin-top: 15px; font-weight: bold; text-align: center; min-height: 24px;"></div>
+    </div>
+  </div>
+
+  <style>
+    .hidden { display: none !important; }
+  </style>
 
   <script src="script.js"></script>
 </body>
