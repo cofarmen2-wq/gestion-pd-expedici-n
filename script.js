@@ -234,3 +234,61 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnCloseDrawer").addEventListener("click", cerrarHistorial);
   document.getElementById("drawerBackdrop").addEventListener("click", cerrarHistorial);
 });
+function cambiarVista(tipo) {
+  const vSalida = document.getElementById("vistaSalida");
+  const vIngreso = document.getElementById("vistaIngreso");
+  
+  if (tipo === 'salida') {
+    vSalida.classList.remove("hidden");
+    vIngreso.classList.add("hidden");
+  } else {
+    vSalida.classList.add("hidden");
+    vIngreso.classList.remove("hidden");
+    document.getElementById("inputCodigoIngreso").focus();
+  }
+}
+
+// Procesar el ingreso exclusivo al presionar Enter o hacer clic
+document.getElementById("inputCodigoIngreso")?.addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    enviarIngresoUnico(this.value);
+  }
+});
+
+document.getElementById("btnEjecutarIngreso")?.addEventListener("click", function() {
+  const input = document.getElementById("inputCodigoIngreso");
+  enviarIngresoUnico(input.value);
+});
+
+function enviarIngresoUnico(codigo) {
+  const codigoLimpio = codigo.trim();
+  const msgDiv = document.getElementById("resultadoIngresoMsg");
+  
+  if (!codigoLimpio) {
+    alert("Ingrese o escanee un código válido.");
+    return;
+  }
+
+  mostrarLoading("Registrando ingreso...");
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ accion: "registrarIngresoUnico", codigoDoc: codigoLimpio })
+  })
+  .then(() => {
+    ocultarLoading();
+    msgDiv.style.color = "green";
+    msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} actualizado en la Columna H.`;
+    document.getElementById("inputCodigoIngreso").value = "";
+    document.getElementById("inputCodigoIngreso").focus();
+    setTimeout(() => { msgDiv.textContent = ""; }, 4000);
+  })
+  .catch(err => {
+    ocultarLoading();
+    msgDiv.style.color = "red";
+    msgDiv.textContent = `Error al registrar: ${err}`;
+  });
+}
