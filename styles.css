@@ -17,7 +17,7 @@ body {
   display: none !important;
 }
 
-/* Header */
+/* Header & Navegación entre Vistas */
 .top-bar {
   background-color: #1e293b;
   padding: 1rem;
@@ -26,10 +26,13 @@ body {
   justify-content: space-between;
   border-bottom: 1px solid #334155;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 0.8rem;
 }
 
 .title-box {
   text-align: center;
+  flex: 1;
 }
 
 .title-box h2 {
@@ -48,6 +51,33 @@ body {
   margin-top: 0.2rem;
 }
 
+/* Botones del Menú Superior (Estilo Selector de Vistas) */
+.nav-menu-container {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.btn-menu-view {
+  background-color: #64748b;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex: 1;
+  max-width: 180px;
+}
+
+.btn-menu-view:hover {
+  opacity: 0.9;
+}
+
 .btn-drawer-open {
   background-color: #334155;
   color: #f8fafc;
@@ -56,9 +86,14 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  transition: background-color 0.2s;
 }
 
-/* Form Layout */
+.btn-drawer-open:hover {
+  background-color: #475569;
+}
+
+/* Form Layout & Vistas */
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -91,7 +126,7 @@ label {
   margin-bottom: 0.4rem;
 }
 
-select {
+select, input[type="text"] {
   background-color: #0f172a;
   color: #f8fafc;
   border: 1px solid #475569;
@@ -99,10 +134,54 @@ select {
   padding: 0.7rem;
   font-size: 1rem;
   outline: none;
+  width: 100%;
 }
 
-select:focus {
+select:focus, input[type="text"]:focus {
   border-color: #38bdf8;
+}
+
+/* Vista de Recepción (Ingresos) */
+.ingreso-card {
+  text-align: center;
+  padding: 2rem 1.2rem;
+}
+
+.ingreso-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #f8fafc;
+}
+
+.ingreso-card p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-ejecutar {
+  width: 100%;
+  background-color: #0284c7;
+  color: white;
+  border: none;
+  padding: 0.9rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s;
+}
+
+.btn-ejecutar:hover {
+  background-color: #0369a1;
+}
+
+.resultado-msg {
+  margin-top: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-height: 1.5rem;
 }
 
 /* QR and Scanned Elements */
@@ -136,6 +215,11 @@ select:focus {
   font-weight: 600;
   cursor: pointer;
   margin-bottom: 1rem;
+  transition: background-color 0.2s;
+}
+
+.btn-camera:hover {
+  background-color: #0284c7dd;
 }
 
 .reader-container {
@@ -178,6 +262,7 @@ select:focus {
   align-items: center;
   font-size: 0.9rem;
   border: 1px solid #334155;
+  word-break: break-word;
 }
 
 .btn-close {
@@ -186,6 +271,11 @@ select:focus {
   color: #ef4444;
   font-size: 1rem;
   cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+
+.btn-close:hover {
+  opacity: 0.8;
 }
 
 .btn-submit {
@@ -199,11 +289,17 @@ select:focus {
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #15803d;
 }
 
 .btn-submit:disabled {
   background-color: #475569;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* Modals & Drawer */
@@ -221,7 +317,7 @@ select:focus {
   position: fixed;
   top: 0;
   right: 0;
-  width: 80%;
+  width: 85%;
   max-width: 350px;
   height: 100vh;
   background: #1e293b;
@@ -230,6 +326,7 @@ select:focus {
   box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .drawer-header {
@@ -262,11 +359,12 @@ select:focus {
   transform: translate(-50%, -50%);
   background: #1e293b;
   padding: 1.5rem;
-  border-radius: 10px;
+  border-radius:;
   width: 90%;
   max-width: 400px;
   z-index: 1002;
   border: 1px solid #334155;
+  box-sizing: border-box;
 }
 
 .doc-badge-modal {
@@ -289,4 +387,22 @@ select:focus {
 .checklist-group select {
   width: auto;
   padding: 0.3rem;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  color: #f8fafc;
+  font-weight: 500;
+  gap: 1rem;
 }
