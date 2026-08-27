@@ -1,6 +1,5 @@
 
 
-
 // URL de tu aplicación web publicada en Google Apps Script
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLKlHseNQ/exec";
 
@@ -38,8 +37,10 @@ function obtenerTurno(fecha = new Date()) {
 
 function actualizarRutas() {
   const selectorRuta = document.getElementById("ruta");
+  if (!selectorRuta) return;
   const turno = obtenerTurno();
-  document.getElementById("turnoBadge").textContent = `TURNO ${turno}`;
+  const badge = document.getElementById("turnoBadge");
+  if (badge) badge.textContent = `TURNO ${turno}`;
   selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true));
   selectorRuta.options[0].disabled = true;
   if (rutasPorTurno[turno]) {
@@ -49,7 +50,9 @@ function actualizarRutas() {
 
 function renderizarDocumentos() {
   const lista = document.getElementById("listaDocs");
-  document.getElementById("countDocs").textContent = documentos.length;
+  const count = document.getElementById("countDocs");
+  if (!lista || !count) return;
+  count.textContent = documentos.length;
   lista.replaceChildren();
 
   documentos.forEach((documento, indice) => {
@@ -82,9 +85,10 @@ function agregarDocumento(codigoDoc) {
   pausadoEscaneo = true;
   setTimeout(() => { pausadoEscaneo = false; }, 1200);
 
-  const tipoDoc = document.querySelector("input[name='tipoDoc']:checked").value;
+  const tipoDocInput = document.querySelector("input[name='tipoDoc']:checked");
+  const tipoDoc = tipoDocInput ? tipoDocInput.value : "GUIA";
   const checkTransferElem = document.getElementById("checkEsTransfer");
-  const esTransfer = checkTransferElem.checked;
+  const esTransfer = checkTransferElem ? checkTransferElem.checked : false;
 
   const documento = { 
     codigoDoc: codigo, 
@@ -93,12 +97,14 @@ function agregarDocumento(codigoDoc) {
     transferChecklist: null 
   };
 
-  checkTransferElem.checked = false;
+  if (checkTransferElem) checkTransferElem.checked = false;
 
   if (documento.esTransfer) {
     documentoTransferPendiente = documento;
-    document.getElementById("transferDocLabel").textContent = `Documento: ${codigo}`;
-    document.getElementById("modalTransfer").classList.remove("hidden");
+    const transferLabel = document.getElementById("transferDocLabel");
+    if (transferLabel) transferLabel.textContent = `Documento: ${codigo}`;
+    const modalTransfer = document.getElementById("modalTransfer");
+    if (modalTransfer) modalTransfer.classList.remove("hidden");
     return;
   }
 
@@ -109,6 +115,8 @@ function agregarDocumento(codigoDoc) {
 function alternarCamara() {
   const contenedor = document.getElementById("reader-container");
   const boton = document.getElementById("btnToggleCamara");
+  if (!contenedor || !boton) return;
+
   if (lectorQr) {
     lectorQr.stop().then(() => lectorQr.clear()).catch(() => {});
     lectorQr = null;
@@ -132,8 +140,8 @@ function alternarCamara() {
 
 function guardarLote(evento) {
   evento.preventDefault();
-  const operario = document.getElementById("operario").value;
-  const ruta = document.getElementById("ruta").value;
+  const operario = document.getElementById("operario")?.value;
+  const ruta = document.getElementById("ruta")?.value;
   
   if (!operario || !ruta || !documentos.length) { 
     alert("Seleccione operario, ruta y escanee al menos un documento."); 
@@ -141,7 +149,7 @@ function guardarLote(evento) {
   }
 
   const boton = document.getElementById("btnGuardar");
-  boton.disabled = true;
+  if (boton) boton.disabled = true;
 
   mostrarLoading(`Registrando lote (${documentos.length} documentos)...`);
 
@@ -164,32 +172,35 @@ function guardarLote(evento) {
     alert("¡Lote registrado con éxito en Google Sheets!");
     documentos.length = 0;
     renderizarDocumentos();
-    document.getElementById("mainForm").reset();
+    const mainForm = document.getElementById("mainForm");
+    if (mainForm) mainForm.reset();
     actualizarRutas();
-    boton.disabled = false;
+    if (boton) boton.disabled = false;
   })
   .catch(error => {
     ocultarLoading();
     alert(`Error de conexión al guardar el lote: ${error}`);
-    boton.disabled = false;
+    if (boton) boton.disabled = false;
   });
 }
 
 function confirmarTransfer() {
   if (!documentoTransferPendiente) return;
   documentoTransferPendiente.transferChecklist = { 
-    firmaSello: document.getElementById("chk1").value, 
-    estadoCarga: document.getElementById("chk2").value, 
-    precinto: document.getElementById("chk3").value 
+    firmaSello: document.getElementById("chk1")?.value || "", 
+    estadoCarga: document.getElementById("chk2")?.value || "", 
+    precinto: document.getElementById("chk3")?.value || "" 
   };
   documentos.push(documentoTransferPendiente);
   documentoTransferPendiente = null;
-  document.getElementById("modalTransfer").classList.add("hidden");
+  const modalTransfer = document.getElementById("modalTransfer");
+  if (modalTransfer) modalTransfer.classList.add("hidden");
   renderizarDocumentos();
 }
 
 function renderizarHistorial(historial) {
   const contenedor = document.getElementById("historialContent");
+  if (!contenedor) return;
   contenedor.replaceChildren();
   if (!historial || !historial.length) {
     contenedor.textContent = "Sin registros recientes.";
@@ -204,8 +215,10 @@ function renderizarHistorial(historial) {
 }
 
 function abrirHistorial() {
-  document.getElementById("drawer").classList.remove("hidden");
-  document.getElementById("drawerBackdrop").classList.remove("hidden");
+  const drawer = document.getElementById("drawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  if (drawer) drawer.classList.remove("hidden");
+  if (backdrop) backdrop.classList.remove("hidden");
   mostrarLoading("Cargando historial...");
 
   fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
@@ -216,35 +229,41 @@ function abrirHistorial() {
     })
     .catch(() => {
       ocultarLoading();
-      document.getElementById("historialContent").textContent = "No se pudo sincronizar el historial.";
+      const content = document.getElementById("historialContent");
+      if (content) content.textContent = "No se pudo sincronizar el historial.";
     });
 }
 
 function cerrarHistorial() {
-  document.getElementById("drawer").classList.add("hidden");
-  document.getElementById("drawerBackdrop").classList.add("hidden");
+  const drawer = document.getElementById("drawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  if (drawer) drawer.classList.add("hidden");
+  if (backdrop) backdrop.classList.add("hidden");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  actualizarRutas();
-  document.getElementById("btnToggleCamara").addEventListener("click", alternarCamara);
-  document.getElementById("mainForm").addEventListener("submit", guardarLote);
-  document.getElementById("btnConfirmTransfer").addEventListener("click", confirmarTransfer);
-  document.getElementById("btnOpenDrawer").addEventListener("click", abrirHistorial);
-  document.getElementById("btnCloseDrawer").addEventListener("click", cerrarHistorial);
-  document.getElementById("drawerBackdrop").addEventListener("click", cerrarHistorial);
-});
+// Control de Vistas (Estilo AppSheet / Separadas)
 function cambiarVista(tipo) {
   const vSalida = document.getElementById("vistaSalida");
   const vIngreso = document.getElementById("vistaIngreso");
-  
+  const btnReg = document.getElementById("btnMenuRegistro");
+  const btnRec = document.getElementById("btnMenuRecepcion");
+
+  if (!vSalida || !vIngreso) return;
+
   if (tipo === 'salida') {
     vSalida.classList.remove("hidden");
     vIngreso.classList.add("hidden");
+    if (btnReg) btnReg.style.background = "#3b82f6";
+    if (btnRec) btnRec.style.background = "#64748b";
   } else {
     vSalida.classList.add("hidden");
     vIngreso.classList.remove("hidden");
-    document.getElementById("inputCodigoIngreso").focus();
+    if (btnReg) btnReg.style.background = "#64748b";
+    if (btnRec) btnRec.style.background = "#3b82f6";
+    const inputIngreso = document.getElementById("inputCodigoIngreso");
+    if (inputIngreso) {
+      setTimeout(() => inputIngreso.focus(), 100);
+    }
   }
 }
 
@@ -258,7 +277,7 @@ document.getElementById("inputCodigoIngreso")?.addEventListener("keypress", func
 
 document.getElementById("btnEjecutarIngreso")?.addEventListener("click", function() {
   const input = document.getElementById("inputCodigoIngreso");
-  enviarIngresoUnico(input.value);
+  if (input) enviarIngresoUnico(input.value);
 });
 
 function enviarIngresoUnico(codigo) {
@@ -280,15 +299,59 @@ function enviarIngresoUnico(codigo) {
   })
   .then(() => {
     ocultarLoading();
-    msgDiv.style.color = "green";
-    msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} actualizado en la Columna H.`;
-    document.getElementById("inputCodigoIngreso").value = "";
-    document.getElementById("inputCodigoIngreso").focus();
-    setTimeout(() => { msgDiv.textContent = ""; }, 4000);
+    if (msgDiv) {
+      msgDiv.style.color = "green";
+      msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} actualizado en la Columna H.`;
+    }
+    const inputIngreso = document.getElementById("inputCodigoIngreso");
+    if (inputIngreso) {
+      inputIngreso.value = "";
+      inputIngreso.focus();
+    }
+    setTimeout(() => { 
+      if (msgDiv) msgDiv.textContent = ""; 
+    }, 4000);
   })
   .catch(err => {
     ocultarLoading();
-    msgDiv.style.color = "red";
-    msgDiv.textContent = `Error al registrar: ${err}`;
+    if (msgDiv) {
+      msgDiv.style.color = "red";
+      msgDiv.textContent = `Error al registrar: ${err}`;
+    }
   });
 }
+
+// Inicialización de eventos al cargar el DOM
+document.addEventListener("DOMContentLoaded", () => {
+  actualizarRutas();
+  
+  const btnToggleCamara = document.getElementById("btnToggleCamara");
+  if (btnToggleCamara) btnToggleCamara.addEventListener("click", alternarCamara);
+  
+  const mainForm = document.getElementById("mainForm");
+  if (mainForm) mainForm.addEventListener("submit", guardarLote);
+  
+  const btnConfirmTransfer = document.getElementById("btnConfirmTransfer");
+  if (btnConfirmTransfer) btnConfirmTransfer.addEventListener("click", confirmarTransfer);
+  
+  const btnOpenDrawer = document.getElementById("btnOpenDrawer");
+  if (btnOpenDrawer) btnOpenDrawer.addEventListener("click", abrirHistorial);
+  
+  const btnCloseDrawer = document.getElementById("btnCloseDrawer");
+  if (btnCloseDrawer) cierreDrawerListeners: { btnCloseDrawer.addEventListener("click", cerrarHistorial); }
+  
+  const drawerBackdrop = document.getElementById("drawerBackdrop");
+  if (drawerBackdrop) drawerBackdrop.addEventListener("click", cerrarHistorial);
+
+  // Listener para agregar documento por teclado manual si existe el input respectivo
+  const inputManualDoc = document.getElementById("inputManualDoc");
+  if (inputManualDoc) {
+    inputManualDoc.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        agregarDocumento(this.value);
+        this.value = "";
+      }
+    });
+  }
+});
