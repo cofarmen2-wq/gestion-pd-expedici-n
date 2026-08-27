@@ -7,13 +7,28 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <!-- Nombre en minúsculas para coincidir con styles.css -->
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Estilos y efecto hover para el logo */
+    .logo-cofar {
+      max-height: 45px;
+      width: auto;
+      object-fit: contain;
+      transition: transform 0.3s ease, filter 0.3s ease;
+      cursor: pointer;
+    }
+    .logo-cofar:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+    }
+  </style>
 </head>
 <body>
 
   <!-- Barra Superior -->
   <header class="top-bar">
     <div class="logo-box">
-      <div class="logo-placeholder">LOGOTIPO</div>
+      <!-- Muestra LOGO COFAR.png con el efecto de iluminación al pasar el cursor -->
+      <img src="LOGO COFAR.png" alt="Logo COFAR" class="logo-cofar">
     </div>
     <div class="title-box">
       <h2>Logística Puesta a Disposición</h2>
