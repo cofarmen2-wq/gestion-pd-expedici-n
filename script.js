@@ -23,7 +23,10 @@ function actualizarRutas() {
   document.getElementById("turnoBadge").textContent = `TURNO ${turno}`;
   selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true));
   selectorRuta.options[0].disabled = true;
-  rutasPorTurno[turno].forEach(ruta => selectorRuta.add(new Option(ruta, ruta)));
+  
+  if (rutasPorTurno[turno]) {
+    rutasPorTurno[turno].forEach(ruta => selectorRuta.add(new Option(ruta, ruta)));
+  }
 }
 
 function renderizarDocumentos() {
@@ -47,7 +50,12 @@ function renderizarDocumentos() {
 function agregarDocumento(codigoDoc) {
   const codigo = String(codigoDoc || "").trim();
   if (!codigo || documentos.some(documento => documento.codigoDoc === codigo)) return;
-  const documento = { codigoDoc: codigo, tipoDoc: document.querySelector("input[name='tipoDoc']:checked").value, esTransfer: document.getElementById("checkEsTransfer").checked, transferChecklist: null };
+  const documento = { 
+    codigoDoc: codigo, 
+    tipoDoc: document.querySelector("input[name='tipoDoc']:checked").value, 
+    esTransfer: document.getElementById("checkEsTransfer").checked, 
+    transferChecklist: null 
+  };
   if (documento.esTransfer) {
     documentoTransferPendiente = documento;
     document.getElementById("transferDocLabel").textContent = `Documento: ${codigo}`;
@@ -82,22 +90,39 @@ function guardarLote(evento) {
   if (!operario || !ruta || !documentos.length) { alert("Seleccione operario, ruta y al menos un documento."); return; }
   const boton = document.getElementById("btnGuardar");
   boton.disabled = true;
-  google.script.run.withSuccessHandler(() => {
-    alert("Lote registrado correctamente.");
-    documentos.splice(0);
-    renderizarDocumentos();
-    document.getElementById("mainForm").reset();
-    actualizarRutas();
-    boton.disabled = false;
-  }).withFailureHandler(error => {
-    alert(`No se pudo guardar: ${error.message || error}`);
-    boton.disabled = false;
-  }).guardarRegistros({ operario, ruta, turno: obtenerTurno(), documentos });
+
+  if (typeof google !== "undefined" && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(() => {
+      alert("Lote registrado correctamente.");
+      documentos.splice(0);
+      renderizarDocumentos();
+      document.getElementById("mainForm").reset();
+      actualizarRutas();
+      boton.disabled = false;
+    }).withFailureHandler(error => {
+      alert(`No se pudo guardar: ${error.message || error}`);
+      boton.disabled = false;
+    }).guardarRegistros({ operario, ruta, turno: obtenerTurno(), documentos });
+  } else {
+    // Simulación para GitHub Pages / Entorno local
+    setTimeout(() => {
+      alert("Lote registrado correctamente (Modo simulación Web).");
+      documentos.splice(0);
+      renderizarDocumentos();
+      document.getElementById("mainForm").reset();
+      actualizarRutas();
+      boton.disabled = false;
+    }, 500);
+  }
 }
 
 function confirmarTransfer() {
   if (!documentoTransferPendiente) return;
-  documentoTransferPendiente.transferChecklist = { firmaSello: document.getElementById("chk1").value, estadoCarga: document.getElementById("chk2").value, precinto: document.getElementById("chk3").value };
+  documentoTransferPendiente.transferChecklist = { 
+    firmaSello: document.getElementById("chk1").value, 
+    estadoCarga: document.getElementById("chk2").value, 
+    precinto: document.getElementById("chk3").value 
+  };
   documentos.push(documentoTransferPendiente);
   documentoTransferPendiente = null;
   document.getElementById("modalTransfer").classList.add("hidden");
@@ -107,7 +132,7 @@ function confirmarTransfer() {
 function renderizarHistorial(historial) {
   const contenedor = document.getElementById("historialContent");
   contenedor.replaceChildren();
-  if (!historial.length) {
+  if (!historial || !historial.length) {
     contenedor.textContent = "Sin registros recientes.";
     return;
   }
@@ -122,9 +147,17 @@ function renderizarHistorial(historial) {
 function abrirHistorial() {
   document.getElementById("drawer").classList.remove("hidden");
   document.getElementById("drawerBackdrop").classList.remove("hidden");
-  google.script.run.withSuccessHandler(renderizarHistorial).withFailureHandler(() => {
-    document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
-  }).obtenerHistorialReciente();
+  
+  if (typeof google !== "undefined" && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(renderizarHistorial).withFailureHandler(() => {
+      document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
+    }).obtenerHistorialReciente();
+  } else {
+    // Datos de demostración en GitHub Pages
+    renderizarHistorial([
+      { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-27 09:00:00", recepcion: "RECEPCIONADO" }
+    ]);
+  }
 }
 
 function cerrarHistorial() {
