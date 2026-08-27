@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Mercadería</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <!-- Nombre en minúsculas para coincidir con styles.css -->
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* Estilos y efecto hover para el logo */
     .logo-cofar {
       max-height: 45px;
       width: auto;
@@ -20,14 +18,48 @@
       transform: scale(1.08);
       filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
     }
+
+    /* Estilos para el Overlay de Carga */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: #fff;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #38bdf8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Overlay de Carga / Spinner -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <h3 id="loadingText">Registrando lote en Google Sheets...</h3>
+  </div>
+
   <!-- Barra Superior -->
   <header class="top-bar">
     <div class="logo-box">
-      <!-- Muestra LOGO COFAR.png con el efecto de iluminación al pasar el cursor -->
       <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
     </div>
     <div class="title-box">
@@ -76,7 +108,7 @@
 
         <div class="transfer-toggle">
           <label>
-            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
+            <input type="checkbox" id="checkEsTransfer"> Marcar Próximo Escaneo como TRANSFER
           </label>
         </div>
 
@@ -127,7 +159,6 @@
     </div>
   </div>
 
-  <!-- Nombre en minúsculas para coincidir con script.js -->
   <script src="script.js"></script>
 </body>
 </html>
