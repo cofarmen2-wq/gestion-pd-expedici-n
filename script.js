@@ -1,5 +1,6 @@
 const documentos = [];
 let lectorQr = null;
+let lectorQrIngreso = null;
 let documentoTransferPendiente = null;
 let procesandoEscaneo = false;
 
@@ -21,7 +22,10 @@ function obtenerTurno(fecha = new Date()) {
 function actualizarRutas() {
   const selectorRuta = document.getElementById("ruta");
   const turno = obtenerTurno();
-  document.getElementById("turnoBadge").textContent = `TURNO ${turno}`;
+  const badge = document.getElementById("turnoBadge");
+  if (badge) badge.textContent = `TURNO ${turno}`;
+  if (!selectorRuta) return;
+  
   selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true));
   selectorRuta.options[0].disabled = true;
   
@@ -30,9 +34,50 @@ function actualizarRutas() {
   }
 }
 
+function cambiarVista(tipo) {
+  const vSalida = document.getElementById("vistaSalida");
+  const vIngreso = document.getElementById("vistaIngreso");
+  const btnReg = document.getElementById("btnMenuRegistro");
+  const btnRec = document.getElementById("btnMenuRecepcion");
+
+  // Detener cámaras activas al cambiar de vista
+  if (lectorQr) {
+    lectorQr.stop().then(() => lectorQr.clear()).catch(() => {});
+    lectorQr = null;
+    document.getElementById("reader-container")?.classList.add("hidden");
+    const btnCam = document.getElementById("btnToggleCamara");
+    if (btnCam) btnCam.textContent = "📷 Iniciar Escáner QR";
+  }
+
+  if (lectorQrIngreso) {
+    lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {});
+    lectorQrIngreso = null;
+    document.getElementById("reader-container-ingreso")?.classList.add("hidden");
+    const btnCamIng = document.getElementById("btnToggleCamaraIngreso");
+    if (btnCamIng) btnCamIng.textContent = "📷 Iniciar Escáner QR (Ingreso)";
+  }
+
+  if (!vSalida || !vIngreso) return;
+
+  if (tipo === 'salida') {
+    vSalida.classList.remove("hidden");
+    vIngreso.classList.add("hidden");
+    if (btnReg) btnReg.style.backgroundColor = "#0284c7";
+    if (btnRec) btnRec.style.backgroundColor = "#334155";
+  } else if (tipo === 'ingreso') {
+    vSalida.classList.add("hidden");
+    vIngreso.classList.remove("hidden");
+    if (btnRec) btnRec.style.backgroundColor = "#0284c7";
+    if (btnReg) btnReg.style.backgroundColor = "#334155";
+  }
+}
+
 function renderizarDocumentos() {
   const lista = document.getElementById("listaDocs");
-  document.getElementById("countDocs").textContent = documentos.length;
+  const count = document.getElementById("countDocs");
+  if (count) count.textContent = documentos.length;
+  if (!lista) return;
+
   lista.replaceChildren();
   documentos.forEach((documento, indice) => {
     const item = document.createElement("li");
@@ -108,6 +153,52 @@ function alternarCamara() {
   lectorQr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, codigo => agregarDocumento(codigo)).catch(() => alert("No se pudo acceder a la cámara."));
 }
 
+function alternarCamaraIngreso() {
+  const contenedor = document.getElementById("reader-container-ingreso");
+  const boton = document.getElementById("btnToggleCamaraIngreso");
+  if (lectorQrIngreso) {
+    lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {});
+    lectorQrIngreso = null;
+    contenedor.classList.add("hidden");
+    boton.textContent = "📷 Iniciar Escáner QR (Ingreso)";
+    return;
+  }
+  if (typeof Html5Qrcode === "undefined") { alert("No se pudo cargar el escáner QR."); return; }
+  lectorQrIngreso = new Html5Qrcode("reader-ingreso");
+  contenedor.classList.remove("hidden");
+  boton.textContent = "Detener Escáner QR";
+  lectorQrIngreso.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, codigo => {
+    const input = document.getElementById("inputCodigoIngreso");
+    if (input) input.value = codigo;
+    procesarIngresoUnico(codigo);
+  }).catch(() => alert("No se pudo acceder a la cámara."));
+}
+
+function procesarIngresoUnico(codigo) {
+  const codigoLimpio = String(codigo || "").trim();
+  const msgDiv = document.getElementById("resultadoIngresoMsg");
+  if (!codigoLimpio) return;
+
+  const exito = response => {
+    if (msgDiv) {
+      msgDiv.style.color = "#22c55e";
+      msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} registrado como ingresado.`;
+    }
+  };
+  const fallo = err => {
+    if (msgDiv) {
+      msgDiv.style.color = "#ef4444";
+      msgDiv.textContent = `Error: ${err.message || "No se pudo registrar el ingreso."}`;
+    }
+  };
+
+  if (typeof google !== "undefined" && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(exito).withFailureHandler(fallo).registrarIngresoUnico(codigoLimpio);
+  } else {
+    setTimeout(exito, 0);
+  }
+}
+
 function guardarLote(evento) {
   evento.preventDefault();
   const operario = document.getElementById("operario").value;
@@ -132,6 +223,7 @@ function confirmarTransfer() {
 
 function renderizarHistorial(historial) {
   const contenedor = document.getElementById("historialContent");
+  if (!contenedor) return;
   contenedor.replaceChildren();
   if (!historial || !historial.length) {
     contenedor.textContent = "Sin registros recientes.";
@@ -154,7 +246,6 @@ function abrirHistorial() {
       document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
     }).obtenerHistorialReciente();
   } else {
-    // Datos de demostración en GitHub Pages
     renderizarHistorial([
       { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-27 09:00:00", recepcion: "RECEPCIONADO" }
     ]);
@@ -169,6 +260,20 @@ function cerrarHistorial() {
 document.addEventListener("DOMContentLoaded", () => {
   actualizarRutas();
   document.getElementById("btnToggleCamara").addEventListener("click", alternarCamara);
+  const btnCamIng = document.getElementById("btnToggleCamaraIngreso");
+  if (btnCamIng) btnCamIng.addEventListener("click", alternarCamaraIngreso);
+
+  const inputIngreso = document.getElementById("inputCodigoIngreso");
+  if (inputIngreso) {
+    inputIngreso.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        procesarIngresoUnico(inputIngreso.value);
+        inputIngreso.value = "";
+      }
+    });
+  }
+
   document.getElementById("mainForm").addEventListener("submit", guardarLote);
   document.getElementById("btnConfirmTransfer").addEventListener("click", confirmarTransfer);
   document.getElementById("btnOpenDrawer").addEventListener("click", abrirHistorial);
