@@ -1,126 +1,178 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Mercadería - Puesta a Disposición</title>
-  <?!= include('style'); ?>
-</head>
-<body>
-  <header class="app-header">
-    <div class="header-content">
-      <h1>Logística Puesta a Disposición</h1>
-      <div class="turno-badge" id="turnoBadge">TURNO: <span id="turnoTexto">CARGANDO...</span></div>
-    </div>
-    <button class="btn-historial" onclick="abrirHistorial()">📋 Historial</button>
-  </header>
+const ID_HOJA_PRINCIPAL = "1P3o496L1TWRfYOOLrF0EZJp_jIxEY_o7TLFLMXRuvbg";
+const ID_HOJA_EGRESO = "1LnB7Mjzl0Mfl26WuPAj4lpexibDGIwCy_VNBENt5wlc";
 
-  <main class="main-container">
-    <div class="view-selector">
-      <button id="btnVistaLote" class="view-btn active" onclick="cambiarVista('lote')">Puesta a Disposición (Salida)</button>
-      <button id="btnVistaIngreso" class="view-btn" onclick="cambiarVista('ingreso')">Documentación de Ingreso</button>
-    </div>
+function doGet(e) {
+  if (e && e.parameter) {
+    if (e.parameter.accion === "obtenerHistorialReciente") {
+      return crearRespuestaJSON(obtenerHistorialReciente());
+    }
+  }
+  return HtmlService.createTemplateFromFile("Index")
+    .evaluate()
+    .setTitle("Gestión de Mercadería - Puesta a Disposición")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+}
 
-    <!-- SECCIÓN 1: PUESTA A DISPOSICIÓN (LOTE) -->
-    <section id="seccionLote" class="form-section">
-      <div class="input-group">
-        <label for="operarioInput">Operario de Ingreso</label>
-        <select id="operarioInput" class="form-control">
-          <option value="">Seleccione operario...</option>
-          <option value="Operario 1">Operario 1</option>
-          <option value="Operario 2">Operario 2</option>
-          <option value="Operario 3">Operario 3</option>
-          <option value="Supervisor">Supervisor</option>
-        </select>
-      </div>
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return crearRespuestaJSON({ status: "ERROR", message: "Payload vacío" });
+    }
+    const payload = JSON.parse(e.postData.contents);
+    
+    if (payload.accion === "guardarRegistros" || payload.documentos) {
+      return crearRespuestaJSON(guardarRegistros(payload));
+    } else if (payload.accion === "registrarIngresoUnico") {
+      return crearRespuestaJSON(registrarIngresoUnico(payload));
+    }
+    
+    return crearRespuestaJSON({ status: "ERROR", message: "Acción no reconocida" });
+  } catch (error) {
+    return crearRespuestaJSON({ status: "ERROR", message: error.toString() });
+  }
+}
 
-      <div class="input-group">
-        <label for="turnoSelect">Turno</label>
-        <select id="turnoSelect" class="form-control" onchange="actualizarRutasPorTurno()">
-          <option value="MAÑANA">Mañana</option>
-          <option value="TARDE">Tarde</option>
-          <option value="NOCHE">Noche</option>
-          <option value="FUERA DE TURNO">Fuera de Turno</option>
-        </select>
-      </div>
+function crearRespuestaJSON(objeto) {
+  return ContentService.createTextOutput(JSON.stringify(objeto))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-      <div class="input-group">
-        <label for="rutaSelect">Ruta de Reparto</label>
-        <select id="rutaSelect" class="form-control">
-          <option value="">Seleccione ruta...</option>
-        </select>
-      </div>
+function include(nombreArchivo) {
+  return HtmlService.createHtmlOutputFromFile(nombreArchivo).getContent();
+}
 
-      <div class="scanner-card">
-        <h3>Escaneo de Documentación QR</h3>
-        <div class="radio-group">
-          <label><input type="radio" name="tipoEscaneo" value="salida" checked> Doc. Salida</label>
-          <label><input type="radio" name="tipoEscaneo" value="ingreso"> Doc. Ingreso</label>
-        </div>
-        
-        <button class="btn-primary" onclick="iniciarEscannerSalida()">📷 Iniciar Escáner QR</button>
-        <div id="reader" class="hidden"></div>
+function normalizarTexto(texto) {
+  if (!texto) return "";
+  return String(texto).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
 
-        <div class="manual-input-row">
-          <input type="text" id="codigoInput" class="form-control" placeholder="Ingrese o escanee código..." onkeypress="if(event.key === 'Enter') agregarDocumentoManual()">
-          <button class="btn-secondary" onclick="agregarDocumentoManual()">Agregar</button>
-        </div>
+function buscarSalidaPorRuta(rutaActual) {
+  try {
+    const ssEgreso = SpreadsheetApp.openById(ID_HOJA_EGRESO);
+    const sheet = ssEgreso.getSheetByName("Respuestas de formulario 1") || ssEgreso.getSheets()[0];
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return null;
 
-        <label class="checkbox-label">
-          <input type="checkbox" id="checkTransfer" onchange="toggleTransferencia()"> ¿Es Documentación TRANSFER?
-        </label>
-      </div>
+    const hoyStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+    const rutaBusqueda = normalizarTexto(rutaActual);
+    
+    for (let i = data.length - 1; i >= 1; i--) {
+      const marcaTemporal = data[i][0];
+      const rutaFila = normalizarTexto(data[i][3]);
+      
+      if (marcaTemporal instanceof Date) {
+        const fechaFilaStr = Utilities.formatDate(marcaTemporal, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        if (fechaFilaStr === hoyStr && rutaFila === rutaBusqueda) {
+          return Utilities.formatDate(marcaTemporal, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+        }
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
-      <div class="documents-list-container">
-        <h3>Documentos en Lote (<span id="contadorDocs">0</span>)</h3>
-        <ul id="listaDocumentos" class="doc-list"></ul>
-      </div>
+function calcularTiempoCarga(fechaIngresoStr, fechaSalidaStr) {
+  try {
+    if (!fechaIngresoStr || !fechaSalidaStr || fechaSalidaStr === "PENDIENTE") return "-";
+    const fIngreso = new Date(fechaIngresoStr);
+    const fSalida = new Date(fechaSalidaStr);
+    if (isNaN(fIngreso.getTime()) || isNaN(fSalida.getTime())) return "-";
+    
+    const diffMs = fSalida - fIngreso;
+    if (diffMs < 0) return "00:00:00";
+    
+    const totalSegundos = Math.floor(diffMs / 1000);
+    const horas = Math.floor(totalSegundos / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
+    
+    return [String(horas).padStart(2, '0'), String(minutos).padStart(2, '0'), String(segundos).padStart(2, '0')].join(':');
+  } catch (e) {
+    return "-";
+  }
+}
 
-      <button class="btn-success-lg" onclick="enviarLote()">FINALIZAR REGISTRO</button>
-    </section>
+function guardarRegistros(payload) {
+  if (!payload || !payload.documentos) throw new Error("No se recibieron documentos.");
 
-    <!-- SECCIÓN 2: DOCUMENTACIÓN DE INGRESO -->
-    <section id="seccionIngreso" class="form-section hidden">
-      <div class="scanner-card">
-        <h3>Registro Rápido de Ingreso Unitario</h3>
-        <button class="btn-primary" onclick="iniciarEscannerIngreso()">📷 Escanear Ingreso QR</button>
-        <div id="readerIngreso" class="hidden"></div>
+  const ss = SpreadsheetApp.openById(ID_HOJA_PRINCIPAL);
+  let sheet = ss.getSheetByName("Hoja 1") || ss.getSheetByName("Respuestas de formulario 1") || ss.getSheets()[0];
+  
+  const operario = payload.operario || "Desconocido";
+  const ruta = payload.ruta || "-";
+  const turno = payload.turno || "-";
+  const fechaHoraGuardado = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  
+  const salidaEncontrada = buscarSalidaPorRuta(ruta);
+  const fechaSalida = salidaEncontrada ? salidaEncontrada : "PENDIENTE";
+  const estadoSalida = salidaEncontrada ? "RECEPCIONADO" : "PENDIENTE";
+  const tiempoCarga = calcularTiempoCarga(fechaHoraGuardado, fechaSalida);
+  
+  const nuevasFilas = payload.documentos.map(doc => [
+    fechaHoraGuardado,
+    operario,
+    ruta,
+    turno,
+    doc.codigoDoc,
+    doc.tipoDoc,
+    doc.esTransfer ? "SI" : "NO",
+    doc.transferChecklist ? JSON.stringify(doc.transferChecklist) : "-",
+    estadoSalida,
+    fechaSalida,
+    tiempoCarga
+  ]);
 
-        <div class="manual-input-row">
-          <input type="text" id="codigoIngresoInput" class="form-control" placeholder="Código de documento de salida..." onkeypress="if(event.key === 'Enter') registrarIngresoUnitario()">
-          <button class="btn-success" onclick="registrarIngresoUnitario()">Registrar Ingreso</button>
-        </div>
-      </div>
+  if (nuevasFilas.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, nuevasFilas.length, nuevasFilas[0].length).setValues(nuevasFilas);
+  }
 
-      <div class="history-container">
-        <h3>Historial Reciente</h3>
-        <div id="historialRecienteLista"></div>
-      </div>
-    </section>
-  </main>
+  return { status: "OK", count: nuevasFilas.length };
+}
 
-  <!-- MODAL TRANSFERENCIA -->
-  <div id="modalTransfer" class="modal hidden">
-    <div class="modal-content">
-      <h3>Configurar Transferencia: <span id="modalDocCode"></span></h3>
-      <label>Origen:</label>
-      <input type="text" id="transOrigen" class="form-control" value="CD Central">
-      <label>Destino:</label>
-      <input type="text" id="transDestino" class="form-control" value="Sucursal">
-      <div class="modal-buttons">
-        <button class="btn-secondary" onclick="cerrarModalTransferencia(false)">Cancelar</button>
-        <button class="btn-primary" onclick="cerrarModalTransferencia(true)">Aceptar</button>
-      </div>
-    </div>
-  </div>
+function registrarIngresoUnico(payload) {
+  const codigoDoc = String(payload.codigoDoc || "").trim();
+  if (!codigoDoc) return { status: "ERROR", message: "Código de documento vacío" };
 
-  <!-- OVERLAY DE CARGA -->
-  <div id="loadingOverlay" class="overlay hidden">
-    <div class="spinner"></div>
-    <p id="loadingText">Procesando...</p>
-  </div>
+  const ss = SpreadsheetApp.openById(ID_HOJA_PRINCIPAL);
+  let sheet = ss.getSheetByName("Hoja 1") || ss.getSheetByName("Respuestas de formulario 1") || ss.getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const fechaHoraActual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  let encontrado = false;
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <?!= include('script'); ?>
-</body>
-</html>
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][4]).trim() === codigoDoc) {
+      sheet.getRange(i + 1, 8).setValue(fechaHoraActual);
+      sheet.getRange(i + 1, 9).setValue("RECEPCIONADO");
+      encontrado = true;
+      break;
+    }
+  }
+
+  if (!encontrado) return { status: "ERROR", message: `El documento ${codigoDoc} no existe en las salidas.` };
+  return { status: "OK", message: "Ingreso registrado correctamente." };
+}
+
+function obtenerHistorialReciente() {
+  const ss = SpreadsheetApp.openById(ID_HOJA_PRINCIPAL);
+  let sheet = ss.getSheetByName("Hoja 1") || ss.getSheetByName("Respuestas de formulario 1") || ss.getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const historial = [];
+  
+  const inicio = Math.max(1, data.length - 20);
+  for (let i = data.length - 1; i >= inicio; i--) {
+    const fecha = data[i][0] instanceof Date ? Utilities.formatDate(data[i][0], Session.getScriptTimeZone(), "HH:mm dd/MM") : String(data[i][0]);
+    historial.push({
+      fechaHora: fecha,
+      operario: data[i][1],
+      ruta: data[i][2],
+      doc: data[i][4],
+      recepcion: data[i][8] || "PENDIENTE",
+      puestaDisposicion: data[i][9] || "-"
+    });
+  }
+  return historial;
+}
