@@ -3,62 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Mercadería - Puesta a Disposición</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Gestión de Mercadería</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Librería Html5Qrcode para el escáner de cámara -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body style="background-color: #0f172a; color: #f8fafc; font-family: sans-serif; margin: 0; padding: 0;">
+<body>
 
-  <!-- BARRA DE NAVEGACIÓN SUPERIOR (Estilo AppSheet / Vistas separadas) -->
-  <div style="display: flex; background: #1e293b; padding: 15px; gap: 15px; justify-content: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
-    <button type="button" id="btnMenuRegistro" onclick="cambiarVista('registro')" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px;">📋 REGISTRO DE PD</button>
-    <button type="button" id="btnMenuRecepcion" onclick="cambiarVista('recepcion')" style="background: #64748b; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px;">📥 RECEPCIÓN DE DOCUMENTACIÓN</button>
+  <!-- Barra Superior -->
+  <header class="top-bar">
+    <button type="button" id="btnOpenDrawer" class="btn-drawer-open">📋 Historial</button>
+    <div class="title-box">
+      <h2>Gestión de Mercadería</h2>
+      <span id="turnoBadge" class="badge">TURNO CARGANDO...</span>
+    </div>
+  </header>
+
+  <!-- Menú de Selección de Vista -->
+  <div class="nav-menu-container">
+    <button type="button" id="btnMenuRegistro" class="btn-menu-view" onclick="cambiarVista('salida')" style="background: #3b82f6;">📤 Salidas (PD)</button>
+    <button type="button" id="btnMenuRecepcion" class="btn-menu-view" onclick="cambiarVista('ingreso')" style="background: #64748b;">📥 Ingresos</button>
   </div>
 
-  <!-- VISTA 1: REGISTRO DE PD -->
-  <div id="vistaRegistroPD" class="view-section" style="padding: 20px; max-width: 800px; margin: auto;">
-    <h2 style="border-bottom: 2px solid #334155; padding-bottom: 10px;">Registro de Puesta a Disposición (Salidas)</h2>
+  <!-- Contenedor Principal -->
+  <main class="container">
+
+    <!-- VISTA 1: REGISTRO DE SALIDAS (PD) -->
+    <div id="vistaSalida">
+      <form id="mainForm">
+        
+        <!-- Tarjeta de Datos Generales -->
+        <div class="card">
+          <div class="form-group">
+            <label for="operario">Operario:</label>
+            <select id="operario" required>
+              <option value="" disabled selected>Seleccione operario...</option>
+              <option value="Operario 1">Operario 1</option>
+              <option value="Operario 2">Operario 2</option>
+              <option value="Operario 3">Operario 3</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ruta">Ruta de Destino:</label>
+            <select id="ruta" required>
+              <option value="" disabled selected>Seleccione ruta...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tarjeta de Escaneo y Documentos -->
+        <div class="card scan-card">
+          <h3>Escaneo de Documentos</h3>
+          
+          <div class="scan-type-selector">
+            <label><input type="radio" name="tipoDoc" value="GUIA" checked> Guía</label>
+            <label><input type="radio" name="tipoDoc" value="FACTURA"> Factura</label>
+            <label><input type="radio" name="tipoDoc" value="OTRO"> Otro</label>
+          </div>
+
+          <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
+          
+          <div id="reader-container" class="reader-container hidden">
+            <div id="reader"></div>
+          </div>
+
+          <!-- Input manual opcional de respaldo -->
+          <div class="form-group">
+            <label for="inputManualDoc">Ingreso manual de código:</label>
+            <input type="text" id="inputManualDoc" placeholder="Escriba código y presione Enter...">
+          </div>
+
+          <div class="transfer-toggle">
+            <label>
+              <input type="checkbox" id="checkEsTransfer"> Marcar como Transferencia (Transfer)
+            </label>
+          </div>
+
+          <div class="scanned-list-box">
+            <h4>Documentos escaneados (<span id="countDocs">0</span>)</h4>
+            <ul id="listaDocs" class="doc-list"></ul>
+          </div>
+        </div>
+
+        <button type="submit" id="btnGuardar" class="btn-submit">Guardar Lote en Sheets</button>
+      </form>
+    </div>
+
+    <!-- VISTA 2: RECEPCIÓN DE DOCUMENTACIÓN (INGRESOS) -->
+    <div id="vistaIngreso" class="hidden">
+      <div class="card ingreso-card">
+        <h3>Recepción de Documentación</h3>
+        <p>Escanee o ingrese el código del documento para registrar su ingreso definitivo:</p>
+        
+        <div class="form-group">
+          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba código aquí..." autocomplete="off">
+        </div>
+
+        <button type="button" id="btnEjecutarIngreso" class="btn-ejecutar">Registrar Ingreso</button>
+        <div id="resultadoIngresoMsg" class="resultado-msg"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal para Checklist de Transferencias -->
+  <div id="modalTransfer" class="modal hidden">
+    <h3>Verificación de Transferencia</h3>
+    <div id="transferDocLabel" class="doc-badge-modal">Documento: -</div>
     
-    <div style="background: #1e293b; padding: 20px; border-radius: 10px; margin-top: 15px;">
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Operario:</label>
-        <input type="text" id="inputOperario" placeholder="Nombre del operario" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ruta de Reparto:</label>
-        <input type="text" id="inputRuta" placeholder="Ej: RUTA 01" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Turno:</label>
-        <input type="text" id="inputTurno" placeholder="Ej: Mañana / Tarde" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Escanear / Agregar Documento de Salida:</label>
-        <input type="text" id="inputDocumentoSalida" placeholder="Código de documento..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box;">
-      </div>
-      <button type="button" id="btnGuardarTodo" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%;">Guardar Lote de Salidas</button>
+    <div class="checklist-group">
+      <label>Firma y Sello: 
+        <select id="chk1"><option value="SI">Sí</option><option value="NO">No</option></select>
+      </label>
+      <label>Estado de Carga: 
+        <select id="chk2"><option value="BUENO">Bueno</option><option value="MALO">Malo</option></select>
+      </label>
+      <label>Precinto Correcto: 
+        <select id="chk3"><option value="SI">Sí</option><option value="NO">No</option></select>
+      </label>
+    </div>
+
+    <button type="button" id="btnConfirmTransfer" class="btn-submit" style="margin-top: 1rem;">Confirmar Transferencia</button>
+  </div>
+  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+
+  <!-- Panel Desplegable (Drawer) de Historial -->
+  <div id="drawer" class="drawer hidden">
+    <div class="drawer-header">
+      <h3>Historial Reciente</h3>
+      <button type="button" id="btnCloseDrawer" class="btn-close">✕</button>
+    </div>
+    <div id="historialContent" class="drawer-body">
+      Cargando historial...
     </div>
   </div>
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
 
-  <!-- VISTA 2: RECEPCIÓN DE DOCUMENTACIÓN -->
-  <div id="vistaRecepcionDoc" class="view-section hidden" style="padding: 30px; max-width: 600px; margin: auto;">
-    <div style="background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-      <h2 style="margin-top: 0; border-bottom: 2px solid #334155; padding-bottom: 10px;">Recepción de Documentación</h2>
-      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Escanee el documento que regresa. El sistema buscará automáticamente en la Columna E y estampará la hora en la Columna H.</p>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Código de Documento:</label>
-        <input type="text" id="inputEscaneoIngresoUnico" placeholder="Escanee código aquí..." autofocus style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box;">
-      </div>
-      
-      <button type="button" id="btnProcesarIngresoUnico" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px;">Registrar Ingreso</button>
-      
-      <div id="mensajeEstadoRecepcion" style="margin-top: 15px; font-weight: bold; text-align: center; min-height: 24px;"></div>
-    </div>
+  <!-- Overlay de Carga -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <span id="loadingText">Cargando...</span>
   </div>
-
-  <style>
-    .hidden { display: none !important; }
-  </style>
 
   <script src="script.js"></script>
 </body>
