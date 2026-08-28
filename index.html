@@ -4,130 +4,130 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Mercadería</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- Nombre en minúsculas para coincidir con styles.css -->
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Estilos y efecto hover para el logo */
+    .logo-cofar {
+      max-height: 45px;
+      width: auto;
+      object-fit: contain;
+      transition: transform 0.3s ease, filter 0.3s ease;
+      cursor: pointer;
+    }
+    .logo-cofar:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+    }
+  </style>
 </head>
 <body>
 
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <span id="loadingText">Cargando...</span>
-  </div>
-
+  <!-- Barra Superior -->
   <header class="top-bar">
-    <div class="title-box">
-      <h2>Gestión de Mercadería</h2>
-      <span id="turnoBadge" class="badge">TURNO CARGANDO...</span>
+    <div class="logo-box">
+      <!-- Muestra LOGO COFAR.png con el efecto de iluminación al pasar el cursor -->
+      <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
     </div>
-    <button class="btn-drawer-open" onclick="abrirHistorialDrawer()">📋 Historial</button>
+    <div class="title-box">
+      <h2>Logística Puesta a Disposición</h2>
+      <span id="turnoBadge" class="badge">TURNO -</span>
+    </div>
+    <button type="button" class="btn-drawer-open" id="btnOpenDrawer">☰ Historial</button>
   </header>
 
-  <div class="nav-menu-container" style="display: flex; gap: 10px; padding: 10px; justify-content: center;">
-    <button id="btnMenuRegistro" class="btn-menu-view" style="background-color: #0284c7; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;" onclick="cambiarVista('salida')">Salidas</button>
-    <button id="btnMenuRecepcion" class="btn-menu-view" style="background-color: #334155; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;" onclick="cambiarVista('ingreso')">Ingresos</button>
-  </div>
-
   <main class="container">
-    
-    <!-- VISTA SALIDAS -->
-    <section id="vistaSalida" class="card">
-      <div class="form-group">
-        <label for="operario">Operario:</label>
-        <input type="text" id="operario" placeholder="Nombre y Apellido">
-      </div>
-
-      <div class="form-group">
-        <label for="ruta">Ruta de Reparto:</label>
-        <select id="ruta">
-          <option value="" disabled selected>Seleccione ruta...</option>
-        </select>
-      </div>
-
-      <div class="card scan-card" style="margin-top: 1rem; background-color: #0f172a;">
-        <h3>Escaneo de Documentación</h3>
-        
-        <div class="scan-type-selector">
-          <label><input type="radio" name="tipoDoc" value="GUIA" checked> Guía</label>
-          <label><input type="radio" name="tipoDoc" value="REMITO"> Remito</label>
+    <form id="mainForm">
+      
+      <!-- Controles Principales -->
+      <div class="card">
+        <div class="form-group">
+          <label for="operario">Operario de Ingreso</label>
+          <select id="operario" required>
+            <option value="" disabled selected>Seleccione operario...</option>
+            <option value="Operario 1">Operario 1</option>
+            <option value="Operario 2">Operario 2</option>
+            <option value="Operario 3">Operario 3</option>
+            <option value="Operario 4">Operario 4</option>
+          </select>
         </div>
 
-        <button id="btnToggleCamara" class="btn-camera" onclick="toggleCamara()">📷 Iniciar Escáner QR</button>
-        
+        <div class="form-group">
+          <label for="ruta">Ruta de Reparto</label>
+          <select id="ruta" required>
+            <option value="" disabled selected>Seleccione ruta...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Zona de Escaneo Múltiple -->
+      <div class="card scan-card">
+        <h3>Escaneo de Documentación QR</h3>
+        <div class="scan-type-selector">
+          <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
+          <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
+        </div>
+
+        <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
         <div id="reader-container" class="reader-container hidden">
           <div id="reader"></div>
         </div>
 
         <div class="transfer-toggle">
-          <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: #f8fafc;">
-            <input type="checkbox" id="checkEsTransfer" style="width: auto;"> ¿Es Transfer?
+          <label>
+            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
           </label>
         </div>
 
-        <div class="form-group">
-          <label for="inputManualDoc">Código de Documento:</label>
-          <input type="text" id="inputManualDoc" placeholder="Escanee o escriba y presione Enter...">
+        <!-- Lista de Documentos Escaneados en Cola -->
+        <div class="scanned-list-box">
+          <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
+          <ul id="listaDocs" class="doc-list"></ul>
         </div>
       </div>
 
-      <div class="scanned-list-box" style="margin-top: 1rem;">
-        <h4>Documentos en Lote (<span id="contadorDocumentos">0</span>)</h4>
-        <ul id="listaDocumentos" class="doc-list"></ul>
-      </div>
+      <!-- Botón de Guardado -->
+      <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
 
-      <button id="btnEnviarLote" class="btn-submit" style="margin-top: 1rem;" onclick="enviarLote()">Guardar Lote de Salida</button>
-    </section>
-
-    <!-- VISTA INGRESOS -->
-    <section id="vistaIngreso" class="card ingreso-card hidden">
-      <h3>Recepción de Documentación</h3>
-      <p>Escanee o ingrese el código del documento para registrar su ingreso único.</p>
-      
-      <button id="btnToggleCamaraIngreso" class="btn-camera" onclick="toggleCamaraIngreso()">📷 Iniciar Escáner QR (Ingreso)</button>
-      
-      <div id="reader-container-ingreso" class="reader-container hidden">
-        <div id="reader-ingreso"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="inputCodigoIngreso">Código del Documento:</label>
-        <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba aquí...">
-      </div>
-
-      <button class="btn-ejecutar" onclick="enviarIngresoUnico(document.getElementById('inputCodigoIngreso').value)">Registrar Ingreso</button>
-      
-      <div id="resultadoIngresoMsg" class="resultado-msg"></div>
-    </section>
-
+    </form>
   </main>
 
-  <div id="drawerBackdrop" class="drawer-backdrop hidden" onclick="cerrarHistorialDrawer()"></div>
-  <div id="historialDrawer" class="drawer hidden" style="right: -350px; transition: right 0.3s ease;">
+  <!-- Drawer Lateral Historial -->
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+  <aside id="drawer" class="drawer hidden">
     <div class="drawer-header">
-      <h3>Historial de Registros</h3>
-      <button class="btn-close" onclick="cerrarHistorialDrawer()">✕</button>
+      <h3>Historial Reciente</h3>
+      <button id="btnCloseDrawer" class="btn-close">✕</button>
     </div>
-    <div id="drawerBody" class="drawer-body">
-      <p style="color: #94a3b8; text-align: center; font-size: 0.9rem;">Cargando historial...</p>
+    <div id="historialContent" class="drawer-body">
+      <p class="loading-text">Cargando datos...</p>
+    </div>
+  </aside>
+
+  <!-- Modal Push Checklist para TRANSFER -->
+  <div id="modalTransfer" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>Checklist Documentación TRANSFER</h3>
+      <p id="transferDocLabel" class="doc-badge-modal"></p>
+      
+      <div class="checklist-group">
+        <label>1. ¿Firma y sello correctos?
+          <select id="chk1"><option value="SI">SI</option><option value="NO">NO</option></select>
+        </label>
+        <label>2. ¿Estado de la carga verificado?
+          <select id="chk2"><option value="SI">SI</option><option value="NO">NO</option></select>
+        </label>
+        <label>3. ¿Número de precinto coincide?
+          <select id="chk3"><option value="SI">SI</option><option value="NO">NO</option></select>
+        </label>
+      </div>
+
+      <button type="button" id="btnConfirmTransfer" class="btn-submit">Confirmar Documento Transfer</button>
     </div>
   </div>
 
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
-  <div id="modalTransfer" class="modal hidden">
-    <h3>Configuración de Transfer</h3>
-    <div id="transferDocLabel" class="doc-badge-modal">Documento: ---</div>
-    
-    <div class="checklist-group" style="margin-bottom: 1rem;">
-      <label>Factura / Remito: <select id="checkFactura"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
-      <label>Troquel: <select id="checkTroquel"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
-      <label>Temperatura: <select id="checkTemperatura"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
-    </div>
-
-    <div style="display: flex; gap: 0.5rem;">
-      <button class="btn-camera" style="background-color: #16a34a; margin-bottom: 0;" onclick="confirmarTransfer()">Confirmar</button>
-      <button class="btn-camera" style="background-color: #475569; margin-bottom: 0;" onclick="cerrarModalTransfer()">Cancelar</button>
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <!-- Nombre en minúsculas para coincidir con script.js -->
   <script src="script.js"></script>
 </body>
-</html>ml>
+</html>
