@@ -96,7 +96,14 @@
         <h3>Recepción de Documentación</h3>
         <p>Escanee o ingrese el código del documento para registrar su ingreso definitivo:</p>
         
-        <div class="form-group">
+        <!-- Botón para activar la cámara en ingresos -->
+        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera">📷 Iniciar Escáner QR (Ingresos)</button>
+        
+        <div id="reader-container-ingreso" class="reader-container hidden">
+          <div id="reader-ingreso"></div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
           <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba código aquí..." autocomplete="off">
         </div>
 
