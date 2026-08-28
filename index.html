@@ -5,154 +5,127 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Mercadería</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Librería Html5Qrcode para el escáner de cámara -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
-  <!-- Barra Superior -->
-  <header class="top-bar">
-    <button type="button" id="btnOpenDrawer" class="btn-drawer-open">📋 Historial</button>
-    <div class="title-box">
-      <h2>Gestión de Mercadería</h2>
-      <span id="turnoBadge" class="badge">TURNO CARGANDO...</span>
-    </div>
-  </header>
-
-  <!-- Menú de Selección de Vista -->
-  <div class="nav-menu-container">
-    <button type="button" id="btnMenuRegistro" class="btn-menu-view" onclick="cambiarVista('salida')" style="background: #3b82f6;">📤 Salidas (PD)</button>
-    <button type="button" id="btnMenuRecepcion" class="btn-menu-view" onclick="cambiarVista('ingreso')" style="background: #64748b;">📥 Ingresos</button>
-  </div>
-
-  <!-- Contenedor Principal -->
-  <main class="container">
-
-    <!-- VISTA 1: REGISTRO DE SALIDAS (PD) -->
-    <div id="vistaSalida">
-      <form id="mainForm">
-        
-        <!-- Tarjeta de Datos Generales -->
-        <div class="card">
-          <div class="form-group">
-            <label for="operario">Operario:</label>
-            <select id="operario" required>
-              <option value="" disabled selected>Seleccione operario...</option>
-              <option value="Operario 1">Operario 1</option>
-              <option value="Operario 2">Operario 2</option>
-              <option value="Operario 3">Operario 3</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="ruta">Ruta de Destino:</label>
-            <select id="ruta" required>
-              <option value="" disabled selected>Seleccione ruta...</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Tarjeta de Escaneo y Documentos -->
-        <div class="card scan-card">
-          <h3>Escaneo de Documentos</h3>
-          
-          <div class="scan-type-selector">
-            <label><input type="radio" name="tipoDoc" value="GUIA" checked> Guía</label>
-            <label><input type="radio" name="tipoDoc" value="FACTURA"> Factura</label>
-            <label><input type="radio" name="tipoDoc" value="OTRO"> Otro</label>
-          </div>
-
-          <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
-          
-          <div id="reader-container" class="reader-container hidden">
-            <div id="reader"></div>
-          </div>
-
-          <!-- Input manual opcional de respaldo -->
-          <div class="form-group">
-            <label for="inputManualDoc">Ingreso manual de código:</label>
-            <input type="text" id="inputManualDoc" placeholder="Escriba código y presione Enter...">
-          </div>
-
-          <div class="transfer-toggle">
-            <label>
-              <input type="checkbox" id="checkEsTransfer"> Marcar como Transferencia (Transfer)
-            </label>
-          </div>
-
-          <div class="scanned-list-box">
-            <h4>Documentos escaneados (<span id="countDocs">0</span>)</h4>
-            <ul id="listaDocs" class="doc-list"></ul>
-          </div>
-        </div>
-
-        <button type="submit" id="btnGuardar" class="btn-submit">Guardar Lote en Sheets</button>
-      </form>
-    </div>
-
-    <!-- VISTA 2: RECEPCIÓN DE DOCUMENTACIÓN (INGRESOS) -->
-    <div id="vistaIngreso" class="hidden">
-      <div class="card ingreso-card">
-        <h3>Recepción de Documentación</h3>
-        <p>Escanee o ingrese el código del documento para registrar su ingreso definitivo:</p>
-        
-        <!-- Botón para activar la cámara en ingresos -->
-        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera">📷 Iniciar Escáner QR (Ingresos)</button>
-        
-        <div id="reader-container-ingreso" class="reader-container hidden">
-          <div id="reader-ingreso"></div>
-        </div>
-
-        <div class="form-group" style="margin-top: 1rem;">
-          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba código aquí..." autocomplete="off">
-        </div>
-
-        <button type="button" id="btnEjecutarIngreso" class="btn-ejecutar">Registrar Ingreso</button>
-        <div id="resultadoIngresoMsg" class="resultado-msg"></div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Modal para Checklist de Transferencias -->
-  <div id="modalTransfer" class="modal hidden">
-    <h3>Verificación de Transferencia</h3>
-    <div id="transferDocLabel" class="doc-badge-modal">Documento: -</div>
-    
-    <div class="checklist-group">
-      <label>Firma y Sello: 
-        <select id="chk1"><option value="SI">Sí</option><option value="NO">No</option></select>
-      </label>
-      <label>Estado de Carga: 
-        <select id="chk2"><option value="BUENO">Bueno</option><option value="MALO">Malo</option></select>
-      </label>
-      <label>Precinto Correcto: 
-        <select id="chk3"><option value="SI">Sí</option><option value="NO">No</option></select>
-      </label>
-    </div>
-
-    <button type="button" id="btnConfirmTransfer" class="btn-submit" style="margin-top: 1rem;">Confirmar Transferencia</button>
-  </div>
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
-
-  <!-- Panel Desplegable (Drawer) de Historial -->
-  <div id="drawer" class="drawer hidden">
-    <div class="drawer-header">
-      <h3>Historial Reciente</h3>
-      <button type="button" id="btnCloseDrawer" class="btn-close">✕</button>
-    </div>
-    <div id="historialContent" class="drawer-body">
-      Cargando historial...
-    </div>
-  </div>
-  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
-
-  <!-- Overlay de Carga -->
   <div id="loadingOverlay" class="loading-overlay hidden">
     <div class="spinner"></div>
     <span id="loadingText">Cargando...</span>
   </div>
 
+  <header class="top-bar">
+    <div class="title-box">
+      <h2>Gestión de Mercadería</h2>
+      <span id="turnoBadge" class="badge">TURNO</span>
+    </div>
+    <button class="btn-drawer-open" onclick="abrirHistorialDrawer()">📋 Historial</button>
+  </header>
+
+  <div class="nav-menu-container">
+    <button id="btnMenuRegistro" class="btn-menu-view" style="background-color: #0284c7;" onclick="cambiarVista('salida')">Salidas</button>
+    <button id="btnMenuRecepcion" class="btn-menu-view" style="background-color: #334155;" onclick="cambiarVista('ingreso')">Ingresos</button>
+  </div>
+
+  <main class="container">
+    
+    <section id="vistaSalida" class="card">
+      <div class="form-group">
+        <label for="operario">Operario:</label>
+        <input type="text" id="operario" placeholder="Nombre y Apellido">
+      </div>
+
+      <div class="form-group">
+        <label for="ruta">Ruta de Reparto:</label>
+        <select id="ruta">
+          <option value="" disabled selected>Seleccione ruta...</option>
+        </select>
+      </div>
+
+      <div class="card scan-card" style="margin-top: 1rem; background-color: #0f172a;">
+        <h3>Escaneo de Documentación</h3>
+        
+        <div class="scan-type-selector">
+          <label><input type="radio" name="tipoDoc" value="GUIA" checked> Guía</label>
+          <label><input type="radio" name="tipoDoc" value="REMITO"> Remito</label>
+        </div>
+
+        <button id="btnToggleCamara" class="btn-camera" onclick="toggleCamara()">📷 Iniciar Escáner QR</button>
+        
+        <div id="reader-container" class="reader-container hidden">
+          <div id="reader"></div>
+        </div>
+
+        <div class="transfer-toggle">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: #f8fafc;">
+            <input type="checkbox" id="checkEsTransfer" style="width: auto;"> ¿Es Transfer?
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="inputManualDoc">Código de Documento:</label>
+          <input type="text" id="inputManualDoc" placeholder="Escanee o escriba y presione Enter...">
+        </div>
+      </div>
+
+      <div class="scanned-list-box" style="margin-top: 1rem;">
+        <h4>Documentos en Lote (<span id="contadorDocumentos">0</span>)</h4>
+        <ul id="listaDocumentos" class="doc-list"></ul>
+      </div>
+
+      <button id="btnEnviarLote" class="btn-submit" style="margin-top: 1rem;" onclick="enviarLote()">Guardar Lote de Salida</button>
+    </section>
+
+    <section id="vistaIngreso" class="card ingreso-card hidden">
+      <h3>Recepción de Documentación</h3>
+      <p>Escanee o ingrese el código del documento para registrar su ingreso único.</p>
+      
+      <button id="btnToggleCamaraIngreso" class="btn-camera" onclick="toggleCamaraIngreso()">📷 Iniciar Escáner QR (Ingreso)</button>
+      
+      <div id="reader-container-ingreso" class="reader-container hidden">
+        <div id="reader-ingreso"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="inputCodigoIngreso">Código del Documento:</label>
+        <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba aquí...">
+      </div>
+
+      <button class="btn-ejecutar" onclick="enviarIngresoUnico(document.getElementById('inputCodigoIngreso').value)">Registrar Ingreso</button>
+      
+      <div id="resultadoIngresoMsg" class="resultado-msg"></div>
+    </section>
+
+  </main>
+
+  <div id="drawerBackdrop" class="drawer-backdrop hidden" onclick="cerrarHistorialDrawer()"></div>
+  <div id="historialDrawer" class="drawer hidden" style="right: -350px; transition: right 0.3s ease;">
+    <div class="drawer-header">
+      <h3>Historial de Registros</h3>
+      <button class="btn-close" onclick="cerrarHistorialDrawer()">✕</button>
+    </div>
+    <div id="drawerBody" class="drawer-body">
+      <p style="color: #94a3b8; text-align: center; font-size: 0.9rem;">Cargando historial...</p>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+  <div id="modalTransfer" class="modal hidden">
+    <h3>Configuración de Transfer</h3>
+    <div id="transferDocLabel" class="doc-badge-modal">Documento: ---</div>
+    
+    <div class="checklist-group" style="margin-bottom: 1rem;">
+      <label>Factura / Remito: <select id="checkFactura"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
+      <label>Troquel: <select id="checkTroquel"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
+      <label>Temperatura: <select id="checkTemperatura"><option value="OK">OK</option><option value="NO">NO</option><option value="N/A">N/A</option></select></label>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn-camera" style="background-color: #16a34a; margin-bottom: 0;" onclick="confirmarTransfer()">Confirmar</button>
+      <button class="btn-camera" style="background-color: #475569; margin-bottom: 0;" onclick="cerrarModalTransfer()">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
