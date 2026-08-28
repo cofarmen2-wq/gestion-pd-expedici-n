@@ -17,7 +17,7 @@ body {
   display: none !important;
 }
 
-/* Header & Navegación entre Vistas */
+/* Header & Menú de Vistas */
 .top-bar {
   background-color: #1e293b;
   padding: 1rem;
@@ -51,17 +51,17 @@ body {
   margin-top: 0.2rem;
 }
 
-/* Botones del Menú Superior (Estilo Selector de Vistas) */
 .nav-menu-container {
   display: flex;
   gap: 0.5rem;
   width: 100%;
   justify-content: center;
-  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background-color: #1e293b;
+  border-bottom: 1px solid #334155;
 }
 
 .btn-menu-view {
-  background-color: #64748b;
   color: #ffffff;
   border: none;
   padding: 0.5rem 1rem;
@@ -69,13 +69,13 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
   flex: 1;
   max-width: 180px;
+  transition: opacity 0.2s;
 }
 
 .btn-menu-view:hover {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .btn-drawer-open {
@@ -93,7 +93,7 @@ body {
   background-color: #475569;
 }
 
-/* Form Layout & Vistas */
+/* Form Layout */
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -141,7 +141,7 @@ select:focus, input[type="text"]:focus {
   border-color: #38bdf8;
 }
 
-/* Vista de Recepción (Ingresos) */
+/* Vista de Ingresos */
 .ingreso-card {
   text-align: center;
   padding: 2rem 1.2rem;
@@ -359,7 +359,7 @@ select:focus, input[type="text"]:focus {
   transform: translate(-50%, -50%);
   background: #1e293b;
   padding: 1.5rem;
-  border-radius:;
+  border-radius: 10px;
   width: 90%;
   max-width: 400px;
   z-index: 1002;
@@ -396,7 +396,7 @@ select:focus, input[type="text"]:focus {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -405,4 +405,18 @@ select:focus, input[type="text"]:focus {
   color: #f8fafc;
   font-weight: 500;
   gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #334155;
+  border-top: 4px solid #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
