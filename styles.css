@@ -1,94 +1,322 @@
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --primary: #38bdf8;
+  --accent: #6366f1;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: #334155;
+  --radius: 12px;
+}
 
-  :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --primary: #38bdf8;
-    --accent: #6366f1;
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --border: #334155;
-    --radius: 12px;
-  }
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  font-family: system-ui, -apple-system, sans-serif; 
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-  body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 30px; }
+body { 
+  background-color: var(--bg); 
+  color: var(--text); 
+  min-height: 100vh; 
+  padding-bottom: 30px; 
+}
 
-  /* Topbar */
-  .top-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--card); padding: 12px 16px; border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .logo-placeholder {
-    border: 1px dashed var(--primary); color: var(--primary);
-    padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
-  }
-  .title-box h2 { font-size: 0.95rem; }
-  .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; background: var(--accent); }
+/* Topbar */
+.top-bar {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  background: var(--card); 
+  padding: 12px 16px; 
+  border-bottom: 1px solid var(--border);
+  position: sticky; 
+  top: 0; 
+  z-index: 10;
+}
 
-  .btn-drawer-open {
-    background: transparent; border: 1px solid var(--primary); color: var(--primary);
-    padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
-  }
+.logo-box {
+  display: flex;
+  align-items: center;
+}
 
-  /* Layout */
-  .container { padding: 14px; max-width: 600px; margin: 0 auto; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
-  
-  .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
-  label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
-  select, input[type="text"] {
-    width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border);
-    border-radius: 8px; color: #fff; font-size: 0.95rem; outline: none;
-  }
+.logo-cofar {
+  max-height: 40px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  cursor: pointer;
+}
 
-  /* Escáner */
-  .scan-type-selector { display: flex; gap: 16px; margin-bottom: 12px; font-size: 0.85rem; color: #fff; }
-  .btn-camera {
-    width: 100%; padding: 12px; background: rgba(56, 189, 248, 0.15);
-    border: 1px solid var(--primary); color: var(--primary); border-radius: 8px;
-    font-weight: bold; cursor: pointer; margin-bottom: 10px;
-  }
-  .reader-container { border-radius: 8px; overflow: hidden; border: 1px solid var(--primary); margin-bottom: 10px; }
-  .hidden { display: none !important; }
+.logo-cofar:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+}
 
-  .transfer-toggle { margin: 10px 0; font-size: 0.85rem; }
+.title-box h2 { 
+  font-size: 0.95rem; 
+}
 
-  /* Lista de Escaneados */
-  .scanned-list-box { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
-  .scanned-list-box h4 { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
-  .doc-list { list-style: none; max-height: 180px; overflow-y: auto; }
-  .doc-item {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem;
-  }
+.badge { 
+  font-size: 0.7rem; 
+  padding: 2px 8px; 
+  border-radius: 12px; 
+  font-weight: bold; 
+  background: var(--accent); 
+  color: #fff;
+}
 
-  .btn-submit {
-    width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--accent));
-    border: none; border-radius: var(--radius); color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer;
-  }
+.btn-drawer-open {
+  background: transparent; 
+  border: 1px solid var(--primary); 
+  color: var(--primary);
+  padding: 6px 10px; 
+  border-radius: 8px; 
+  font-size: 0.8rem; 
+  cursor: pointer;
+}
 
-  /* Drawer Lateral */
-  .drawer-backdrop, .modal-backdrop {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0, 0, 0, 0.7); z-index: 100;
-  }
-  .drawer {
-    position: fixed; top: 0; right: 0; width: 80%; max-width: 320px; height: 100vh;
-    background: var(--card); z-index: 101; padding: 16px; display: flex; flex-direction: column;
-    border-left: 1px solid var(--border); transition: transform 0.3s ease;
-  }
-  .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .btn-close { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
-  .drawer-body { overflow-y: auto; flex: 1; }
-  .history-card { background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.78rem; }
+/* Menú de Navegación de Vistas */
+.nav-menu {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  justify-content: center;
+}
 
-  /* Modal Checklist */
-  .modal {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 20px; width: 90%; max-width: 400px;
-  }
-  .doc-badge-modal { font-size: 0.8rem; color: var(--primary); margin: 8px 0 14px 0; font-weight: bold; }
-  .checklist-group label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #fff; }
-  .checklist-group select { width: 80px; padding: 4px; }
+.btn-menu {
+  flex: 1;
+  padding: 10px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  background-color: var(--card);
+  transition: background-color 0.2s, border-color 0.2s;
+  text-align: center;
+}
+
+.btn-menu:hover {
+  border-color: var(--primary);
+}
+
+/* Layout */
+.container { 
+  padding: 14px; 
+  max-width: 600px; 
+  margin: 0 auto; 
+}
+
+.card { 
+  background: var(--card); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius); 
+  padding: 16px; 
+  margin-bottom: 14px; 
+}
+
+.form-group { 
+  margin-bottom: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px; 
+}
+
+label { 
+  font-size: 0.8rem; 
+  color: var(--muted); 
+  font-weight: 600; 
+}
+
+select, input[type="text"] {
+  width: 100%; 
+  padding: 12px; 
+  background: #0f172a; 
+  border: 1px solid var(--border);
+  border-radius: 8px; 
+  color: #fff; 
+  font-size: 0.95rem; 
+  outline: none;
+}
+
+select:focus, input[type="text"]:focus {
+  border-color: var(--primary);
+}
+
+/* Escáner */
+.scan-type-selector { 
+  display: flex; 
+  gap: 16px; 
+  margin-bottom: 12px; 
+  font-size: 0.85rem; 
+  color: #fff; 
+}
+
+.btn-camera {
+  width: 100%; 
+  padding: 12px; 
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid var(--primary); 
+  color: var(--primary); 
+  border-radius: 8px;
+  font-weight: bold; 
+  cursor: pointer; 
+  margin-bottom: 10px;
+}
+
+.reader-container { 
+  border-radius: 8px; 
+  overflow: hidden; 
+  border: 1px solid var(--primary); 
+  margin-bottom: 10px; 
+}
+
+.hidden { 
+  display: none !important; 
+}
+
+.transfer-toggle { 
+  margin: 10px 0; 
+  font-size: 0.85rem; 
+}
+
+/* Lista de Escaneados */
+.scanned-list-box { 
+  border-top: 1px solid var(--border); 
+  padding-top: 10px; 
+  margin-top: 10px; 
+}
+
+.scanned-list-box h4 { 
+  font-size: 0.85rem; 
+  color: var(--muted); 
+  margin-bottom: 8px; 
+}
+
+.doc-list { 
+  list-style: none; 
+  max-height: 180px; 
+  overflow-y: auto; 
+}
+
+.doc-item {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  background: #0f172a; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  margin-bottom: 6px; 
+  font-size: 0.8rem;
+}
+
+.btn-submit {
+  width: 100%; 
+  padding: 16px; 
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none; 
+  border-radius: var(--radius); 
+  color: #fff; 
+  font-size: 1rem; 
+  font-weight: bold; 
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+}
+
+/* Drawer Lateral */
+.drawer-backdrop, .modal-backdrop {
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7); 
+  z-index: 100;
+}
+
+.drawer {
+  position: fixed; 
+  top: 0; 
+  right: 0; 
+  width: 80%; 
+  max-width: 320px; 
+  height: 100vh;
+  background: var(--card); 
+  z-index: 101; 
+  padding: 16px; 
+  display: flex; 
+  flex-direction: column;
+  border-left: 1px solid var(--border); 
+  transition: transform 0.3s ease;
+}
+
+.drawer-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 16px; 
+}
+
+.btn-close { 
+  background: none; 
+  border: none; 
+  color: #fff; 
+  font-size: 1.2rem; 
+  cursor: pointer; 
+}
+
+.drawer-body { 
+  overflow-y: auto; 
+  flex: 1; 
+}
+
+.history-card { 
+  background: #0f172a; 
+  padding: 10px; 
+  border-radius: 8px; 
+  margin-bottom: 8px; 
+  font-size: 0.78rem; 
+  border: 1px solid var(--border);
+}
+
+/* Modal Checklist */
+.modal {
+  position: absolute; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%);
+  background: var(--card); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius);
+  padding: 20px; 
+  width: 90%; 
+  max-width: 400px;
+  z-index: 102;
+}
+
+.doc-badge-modal { 
+  font-size: 0.8rem; 
+  color: var(--primary); 
+  margin: 8px 0 14px 0; 
+  font-weight: bold; 
+}
+
+.checklist-group label { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 12px; 
+  color: #fff; 
+}
+
+.checklist-group select { 
+  width: 80px; 
+  padding: 6px; 
+}
