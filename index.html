@@ -16,14 +16,15 @@
   <header class="top-bar">
     <div class="title-box">
       <h2>Gestión de Mercadería</h2>
-      <span id="turnoBadge" class="badge">TURNO</span>
+      <span id="turnoBadge" class="badge">TURNO CARGANDO...</span>
     </div>
     <button class="btn-drawer-open" onclick="abrirHistorialDrawer()">📋 Historial</button>
   </header>
 
-  <div class="nav-menu-container">
-    <button id="btnMenuRegistro" class="btn-menu-view" style="background-color: #0284c7;" onclick="cambiarVista('salida')">Salidas</button>
-    <button id="btnMenuRecepcion" class="btn-menu-view" style="background-color: #334155;" onclick="cambiarVista('ingreso')">Ingresos</button>
+  <!-- CONTENEDOR DE BOTONES DE VISTA CORREGIDO -->
+  <div class="nav-menu-container" style="display: flex; gap: 10px; padding: 10px; justify-content: center;">
+    <button id="btnMenuRegistro" class="btn-menu-view" style="background-color: #0284c7; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;" onclick="cambiarVista('salida')">Salidas</button>
+    <button id="btnMenuRecepcion" class="btn-menu-view" style="background-color: #334155; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;" onclick="cambiarVista('ingreso')">Ingresos</button>
   </div>
 
   <main class="container">
