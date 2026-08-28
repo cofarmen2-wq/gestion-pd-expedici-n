@@ -123,10 +123,23 @@ function renderizarDocumentos() {
 function agregarDocumento(codigoDoc) {
   if (pausadoEscaneo) return;
   const codigo = String(codigoDoc || "").trim();
-  if (!codigo || documentos.some(doc => doc.codigoDoc === codigo)) return;
+  if (!codigo) return;
+
+  // CONDICIÓN NUEVA: Verifica si el documento ya se encuentra cargado en el lote actual
+  if (documentos.some(doc => doc.codigoDoc === codigo)) {
+    alert(`El documento ${codigo} ya fue escaneado en este lote.`);
+    
+    // Limpia el input manual de inmediato para seguir escaneando
+    const inputManual = document.getElementById("inputManualDoc");
+    if (inputManual) {
+      inputManual.value = "";
+      inputManual.focus();
+    }
+    return;
+  }
 
   pausadoEscaneo = true;
-  setTimeout(() => { pausadoEscaneo = false; }, 1200);
+  setTimeout(() => { pausadoEscaneo = false; }, 300);
 
   const tipoDocInput = document.querySelector("input[name='tipoDoc']:checked");
   const tipoDoc = tipoDocInput ? tipoDocInput.value : "GUIA";
@@ -150,6 +163,13 @@ function agregarDocumento(codigoDoc) {
 
   documentos.push(documento);
   renderizarDocumentos();
+  
+  // Limpia el input manual tras cada carga exitosa
+  const inputManual = document.getElementById("inputManualDoc");
+  if (inputManual) {
+    inputManual.value = "";
+    inputManual.focus();
+  }
 }
 
 function confirmarTransfer() {
