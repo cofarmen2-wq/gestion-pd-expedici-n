@@ -11,6 +11,16 @@ const rutasPorTurno = {
   "FUERA DE TURNO": []
 };
 
+function mostrarLoading(mostrar, texto = "Procesando lote, por favor espere...") {
+  const overlay = document.getElementById("loadingOverlay");
+  const txt = document.getElementById("loadingText");
+  if (txt) txt.textContent = texto;
+  if (overlay) {
+    if (mostrar) overlay.classList.remove("hidden");
+    else overlay.classList.add("hidden");
+  }
+}
+
 function obtenerTurno(fecha = new Date()) {
   const minutos = fecha.getHours() * 60 + fecha.getMinutes();
   if (minutos >= 390 && minutos <= 720) return "MAÑANA";
@@ -62,13 +72,13 @@ function cambiarVista(tipo) {
   if (tipo === 'salida') {
     vSalida.classList.remove("hidden");
     vIngreso.classList.add("hidden");
-    if (btnReg) btnReg.style.backgroundColor = "#0284c7";
-    if (btnRec) btnRec.style.backgroundColor = "#334155";
+    if (btnReg) btnReg.classList.add("active");
+    if (btnRec) btnRec.classList.remove("active");
   } else if (tipo === 'ingreso') {
     vSalida.classList.add("hidden");
     vIngreso.classList.remove("hidden");
-    if (btnRec) btnRec.style.backgroundColor = "#0284c7";
-    if (btnReg) btnReg.style.backgroundColor = "#334155";
+    if (btnRec) btnRec.classList.add("active");
+    if (btnReg) btnReg.classList.remove("active");
   }
 }
 
@@ -119,20 +129,25 @@ function registrarDocumento(documento) {
     return;
   }
   procesandoEscaneo = true;
+  mostrarLoading(true, "Registrando documento...");
+  
   const registro = { operario, ruta, turno: obtenerTurno(), documento };
   const registrado = () => {
     documentos.push(documento);
     renderizarDocumentos();
     procesandoEscaneo = false;
+    mostrarLoading(false);
   };
   const fallido = error => {
     alert(`No se pudo registrar el documento: ${error.message || error}`);
     procesandoEscaneo = false;
+    mostrarLoading(false);
   };
+
   if (typeof google !== "undefined" && google.script && google.script.run) {
     google.script.run.withSuccessHandler(registrado).withFailureHandler(fallido).registrarDocumento(registro);
   } else {
-    setTimeout(registrado, 0);
+    setTimeout(registrado, 400);
   }
 }
 
@@ -179,13 +194,16 @@ function procesarIngresoUnico(codigo) {
   const msgDiv = document.getElementById("resultadoIngresoMsg");
   if (!codigoLimpio) return;
 
+  mostrarLoading(true, "Registrando ingreso...");
   const exito = response => {
+    mostrarLoading(false);
     if (msgDiv) {
       msgDiv.style.color = "#22c55e";
       msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} registrado como ingresado.`;
     }
   };
   const fallo = err => {
+    mostrarLoading(false);
     if (msgDiv) {
       msgDiv.style.color = "#ef4444";
       msgDiv.textContent = `Error: ${err.message || "No se pudo registrar el ingreso."}`;
@@ -195,7 +213,7 @@ function procesarIngresoUnico(codigo) {
   if (typeof google !== "undefined" && google.script && google.script.run) {
     google.script.run.withSuccessHandler(exito).withFailureHandler(fallo).registrarIngresoUnico(codigoLimpio);
   } else {
-    setTimeout(exito, 0);
+    setTimeout(exito, 500);
   }
 }
 
@@ -205,7 +223,14 @@ function guardarLote(evento) {
   const ruta = document.getElementById("ruta").value;
   if (!operario || !ruta) { alert("Seleccione operario y ruta."); return; }
   if (!documentos.length) { alert("Escanee al menos un documento."); return; }
-  alert(`Se registraron ${documentos.length} documento(s) durante el turno.`);
+  
+  mostrarLoading(true, `Guardando lote de ${documentos.length} documento(s)...`);
+  setTimeout(() => {
+    mostrarLoading(false);
+    alert(`Se registraron ${documentos.length} documento(s) correctamente.`);
+    documentos.length = 0;
+    renderizarDocumentos();
+  }, 800);
 }
 
 function confirmarTransfer() {
@@ -247,7 +272,7 @@ function abrirHistorial() {
     }).obtenerHistorialReciente();
   } else {
     renderizarHistorial([
-      { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-27 09:00:00", recepcion: "RECEPCIONADO" }
+      { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-28 17:00:00", recepcion: "RECEPCIONADO" }
     ]);
   }
 }
