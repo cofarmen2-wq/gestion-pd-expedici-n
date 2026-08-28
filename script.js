@@ -59,7 +59,6 @@ function cambiarVista(tipo) {
   const btnReg = document.getElementById("btnMenuRegistro"); 
   const btnRec = document.getElementById("btnMenuRecepcion"); 
 
-  // Detener cámara de salidas si está activa
   if (lectorQr) {
     lectorQr.stop().then(() => lectorQr.clear()).catch(() => {}); 
     lectorQr = null; 
@@ -68,7 +67,6 @@ function cambiarVista(tipo) {
     if (btnCam) btnCam.textContent = "📷 Iniciar Escáner QR"; 
   } 
 
-  // Detener cámara de ingresos si está activa
   if (lectorQrIngreso) {
     lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {}); 
     lectorQrIngreso = null; 
@@ -283,7 +281,7 @@ function enviarLote() {
       alert("Error al guardar: " + (response?.message || "Desconocido"));
     }
   })
-  .catch(err => {
+  .catch(() => {
     ocultarLoading();
     alert("Error de conexión al guardar el lote.");
   });
@@ -325,7 +323,7 @@ function enviarIngresoUnico(codigo) {
       inputIngreso.focus();
     }
   })
-  .catch(err => {
+  .catch(() => {
     ocultarLoading();
     if (msgDiv) {
       msgDiv.style.color = "#ef4444";
@@ -370,12 +368,8 @@ function cerrarHistorialDrawer() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Forzar la carga del turno y las rutas al iniciar
-  if (typeof actualizarRutas === "function") {
-    actualizarRutas();
-  }
+  actualizarRutas();
 
-  // 2. Listeners para entradas manuales
   const inputManual = document.getElementById("inputManualDoc");
   if (inputManual) {
     inputManual.addEventListener("keydown", (e) => {
