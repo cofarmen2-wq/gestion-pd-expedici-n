@@ -10,7 +10,7 @@ const rutasPorTurno = {
   MAÑANA: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"], 
   TARDE: ["General Alvear", "Zona sur (Mañana: San Rafael 1; San Rafael 2)", "Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"], 
   NOCHE: ["San Juan", "Zona sur (Noche: San Rafael 1; San Rafael 2; G. Alvear; Malargüe)", "SAN LUIS"], 
-  FUERA DE TURNO: [] 
+  FUERA DE TURNO: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este", "San Juan", "SAN LUIS", "General Alvear"] 
 };
 
 function mostrarLoading(mensaje = "Cargando...") {
@@ -39,10 +39,17 @@ function actualizarRutas() {
   const badge = document.getElementById("turnoBadge"); 
   if (badge) badge.textContent = `TURNO ${turno}`; 
   if (!selectorRuta) return; 
-  selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true)); 
-  selectorRuta.options[0].disabled = true; 
-  if (rutasPorTurno[turno]) {
-    rutasPorTurno[turno].forEach(ruta => selectorRuta.add(new Option(ruta, ruta))); 
+  
+  selectorRuta.innerHTML = '<option value="" disabled selected>Seleccione ruta...</option>';
+  
+  const listaRutas = rutasPorTurno[turno] || rutasPorTurno["FUERA DE TURNO"];
+  if (listaRutas) {
+    listaRutas.forEach(ruta => {
+      const opt = document.createElement("option");
+      opt.value = ruta;
+      opt.textContent = ruta;
+      selectorRuta.appendChild(opt);
+    }); 
   } 
 }
 
