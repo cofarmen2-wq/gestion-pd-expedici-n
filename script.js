@@ -1,4 +1,3 @@
-
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-cWE_jjcgMqvU_FzyK1YJCmK3Agm3D1Atg7sEUSv0qmLKlHseNQ/exec";
 const documentos = [];
 let lectorQr = null;
@@ -27,9 +26,9 @@ function ocultarLoading() {
 
 function obtenerTurno(fecha = new Date()) {
   const minutos = fecha.getHours() * 60 + fecha.getMinutes(); 
-  if (minutos >= 390 && minutos <= 720) return "MAÑANA"; 
-  if (minutos >= 721 && minutos <= 1260) return "TARDE"; 
-  if (minutos >= 1261 || minutos < 390) return "NOCHE"; 
+  if (minutos >= 390 && minutos <= 720) return "MAÑANA";   // 06:30 a 12:00
+  if (minutos >= 721 && minutos <= 1260) return "TARDE";  // 12:01 a 21:00
+  if (minutos >= 1261 || minutos < 390) return "NOCHE";   // 21:01 a 06:29
   return "FUERA DE TURNO"; 
 }
 
@@ -37,6 +36,7 @@ function actualizarRutas() {
   const selectorRuta = document.getElementById("ruta"); 
   const turno = obtenerTurno(); 
   const badge = document.getElementById("turnoBadge"); 
+  
   if (badge) badge.textContent = `TURNO ${turno}`; 
   if (!selectorRuta) return; 
   
