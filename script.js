@@ -2,8 +2,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB7yRevFu4p_SLgUL-c
 
 const documentos = [];
 let lectorQr = null;
+let lectorQrIngreso = null; // Instancia de cámara para la vista ingresos
 let documentoTransferPendiente = null;
 let pausadoEscaneo = false;
+let pausadoEscaneoIngreso = false;
 
 const rutasPorTurno = {
   MAÑANA: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"],
@@ -27,11 +29,8 @@ function ocultarLoading() {
 // Detección automática de turnos basada en la hora local actual
 function obtenerTurno(fecha = new Date()) {
   const minutos = fecha.getHours() * 60 + fecha.getMinutes();
-  // MAÑANA: 06:30 (390 min) a 12:00 (720 min)
   if (minutos >= 390 && minutos <= 720) return "MAÑANA";
-  // TARDE: 12:01 (721 min) a 21:00 (1260 min)
   if (minutos >= 721 && minutos <= 1260) return "TARDE";
-  // NOCHE: 21:01 hasta las 06:29 de la madrugada siguiente
   if (minutos >= 1261 || minutos < 390) return "NOCHE";
   return "FUERA DE TURNO";
 }
@@ -52,12 +51,30 @@ function actualizarRutas() {
   }
 }
 
-// Control seguro para cambiar de vista (Salidas / Ingresos)
+// Control seguro para cambiar de vista (Salidas / Ingresos) y apagar cámaras activas por seguridad
 function cambiarVista(tipo) {
   const vSalida = document.getElementById("vistaSalida");
   const vIngreso = document.getElementById("vistaIngreso");
   const btnReg = document.getElementById("btnMenuRegistro");
   const btnRec = document.getElementById("btnMenuRecepcion");
+
+  // Apagar cámara de salidas si se cambia de vista
+  if (lectorQr) {
+    lectorQr.stop().then(() => lectorQr.clear()).catch(() => {});
+    lectorQr = null;
+    document.getElementById("reader-container")?.classList.add("hidden");
+    const btnCam = document.getElementById("btnToggleCamara");
+    if (btnCam) btnCam.textContent = "📷 Iniciar Escáner QR";
+  }
+
+  // Apagar cámara de ingresos si se cambia de vista
+  if (lectorQrIngreso) {
+    lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {});
+    lectorQrIngreso = null;
+    document.getElementById("reader-container-ingreso")?.classList.add("hidden");
+    const btnCamIng = document.getElementById("btnToggleCamaraIngreso");
+    if (btnCamIng) btnCamIng.textContent = "📷 Iniciar Escáner QR (Ingresos)";
+  }
 
   if (!vSalida || !vIngreso) return;
 
@@ -150,6 +167,7 @@ function confirmarTransfer() {
   renderizarDocumentos();
 }
 
+// Control de cámara para Salidas
 function alternarCamara() {
   const contenedor = document.getElementById("reader-container");
   const boton = document.getElementById("btnToggleCamara");
@@ -174,6 +192,43 @@ function alternarCamara() {
     { fps: 10, qrbox: 250 }, 
     codigo => agregarDocumento(codigo)
   ).catch(() => alert("No se pudo iniciar la cámara."));
+}
+
+// Control de cámara para Ingresos
+function alternarCamaraIngreso() {
+  const contenedor = document.getElementById("reader-container-ingreso");
+  const boton = document.getElementById("btnToggleCamaraIngreso");
+  if (!contenedor || !boton) return;
+
+  if (lectorQrIngreso) {
+    lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {});
+    lectorQrIngreso = null;
+    contenedor.classList.add("hidden");
+    boton.textContent = "📷 Iniciar Escáner QR (Ingresos)";
+    return;
+  }
+  if (typeof Html5Qrcode === "undefined") { 
+    alert("Librería Html5Qrcode no encontrada."); 
+    return; 
+  }
+  lectorQrIngreso = new Html5Qrcode("reader-ingreso");
+  contenedor.classList.remove("hidden");
+  boton.textContent = "Detener Escáner QR (Ingresos)";
+  
+  lectorQrIngreso.start(
+    { facingMode: "environment" }, 
+    { fps: 10, qrbox: 250 }, 
+    codigo => {
+      if (pausadoEscaneoIngreso) return;
+      pausadoEscaneoIngreso = true;
+      setTimeout(() => { pausadoEscaneoIngreso = false; }, 1500);
+
+      // Al detectar por cámara en ingresos, enviamos directo al servidor
+      const inputIngreso = document.getElementById("inputCodigoIngreso");
+      if (inputIngreso) inputIngreso.value = codigo;
+      enviarIngresoUnico(codigo);
+    }
+  ).catch(() => alert("No se pudo iniciar la cámara de ingresos."));
 }
 
 function guardarLote(evento) {
@@ -221,7 +276,7 @@ function guardarLote(evento) {
 }
 
 function enviarIngresoUnico(codigo) {
-  const codigoLimpio = codigo.trim();
+  const codigoLimpio = String(codigo || "").trim();
   const msgDiv = document.getElementById("resultadoIngresoMsg");
   if (!codigoLimpio) return;
 
@@ -298,6 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
   actualizarRutas();
 
   document.getElementById("btnToggleCamara")?.addEventListener("click", alternarCamara);
+  document.getElementById("btnToggleCamaraIngreso")?.addEventListener("click", alternarCamaraIngreso);
   document.getElementById("mainForm")?.addEventListener("submit", guardarLote);
   document.getElementById("btnConfirmTransfer")?.addEventListener("click", confirmarTransfer);
   
