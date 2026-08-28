@@ -29,34 +29,44 @@ body {
   justify-content: space-between; 
   align-items: center;
   background: var(--card); 
-  padding: 12px 16px; 
+  padding: 10px 16px; 
   border-bottom: 1px solid var(--border);
   position: sticky; 
   top: 0; 
   z-index: 10;
 }
 
-.logo-box { display: flex; align-items: center; }
+.logo-box { 
+  display: flex; 
+  align-items: center; 
+  max-width: 140px;
+}
 
+/* CORRECCIÓN: Tamaño controlado del logo para que no ocupe toda la pantalla */
 .logo-cofar {
-  max-height: 40px;
+  max-height: 38px;
   width: auto;
   object-fit: contain;
-  transition: transform 0.3s ease, filter 0.3s ease;
   cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 .logo-cofar:hover {
-  transform: scale(1.08);
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+  transform: scale(1.05);
 }
 
-.title-box h2 { font-size: 0.95rem; }
+.title-box {
+  text-align: center;
+}
+
+.title-box h2 { 
+  font-size: 0.9rem; 
+}
 
 .badge { 
-  font-size: 0.7rem; 
-  padding: 2px 8px; 
-  border-radius: 12px; 
+  font-size: 0.65rem; 
+  padding: 2px 6px; 
+  border-radius: 10px; 
   font-weight: bold; 
   background: var(--accent); 
   color: #fff;
@@ -68,23 +78,23 @@ body {
   color: var(--primary);
   padding: 6px 10px; 
   border-radius: 8px; 
-  font-size: 0.8rem; 
+  font-size: 0.75rem; 
   cursor: pointer;
 }
 
 /* Menú de Navegación entre Vistas */
 .nav-menu {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 14px;
   justify-content: center;
 }
 
 .btn-menu {
   flex: 1;
-  padding: 12px;
+  padding: 10px 8px;
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
