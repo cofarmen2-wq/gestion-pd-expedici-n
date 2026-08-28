@@ -150,6 +150,10 @@ function eliminarDocumento(index) {
   actualizarListaDocumentos();
 }
 
+function toggleTransferencia() {
+  // Manejador opcional para el checkbox de transferencias si se requiere lógica directa
+}
+
 function abrirModalTransferencia(codigo) {
   const modal = document.getElementById("modalTransfer");
   const span = document.getElementById("modalDocCode");
@@ -173,7 +177,8 @@ function cerrarModalTransferencia(confirmado) {
     actualizarListaDocumentos();
   }
   documentoTransferPendiente = null;
-  document.getElementById("checkTransfer").checked = false;
+  const chk = document.getElementById("checkTransfer");
+  if (chk) chk.checked = false;
 }
 
 async function enviarLote() {
@@ -225,9 +230,10 @@ async function registrarIngresoUnitario(codigoOverride = null) {
 
     if (resultado.status === "OK") {
       alert(resultado.message);
-      if (document.getElementById("codigoIngresoInput")) {
-        document.getElementById("codigoIngresoInput").value = "";
-        document.getElementById("codigoIngresoInput").focus();
+      const campoIngreso = document.getElementById("codigoIngresoInput");
+      if (campoIngreso) {
+        campoIngreso.value = "";
+        campoIngreso.focus();
       }
       cargarHistorialReciente();
     } else {
