@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Mercadería</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <!-- Nombre en minúsculas para coincidir con styles.css -->
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* Estilos y efecto hover para el logo */
     .logo-cofar {
       max-height: 45px;
       width: auto;
@@ -20,6 +18,23 @@
       transform: scale(1.08);
       filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
     }
+    .nav-menu {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .btn-menu {
+      padding: 10px 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+      background-color: #334155;
+      transition: background-color 0.2s;
+    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -27,7 +42,6 @@
   <!-- Barra Superior -->
   <header class="top-bar">
     <div class="logo-box">
-      <!-- Muestra LOGO COFAR.png con el efecto de iluminación al pasar el cursor -->
       <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
     </div>
     <div class="title-box">
@@ -38,59 +52,84 @@
   </header>
 
   <main class="container">
-    <form id="mainForm">
-      
-      <!-- Controles Principales -->
+    
+    <!-- Menú de Navegación entre Vistas -->
+    <div class="nav-menu">
+      <button type="button" id="btnMenuRegistro" class="btn-menu" style="background-color: #0284c7;" onclick="cambiarVista('salida')">Puesta a Disposición (Salida)</button>
+      <button type="button" id="btnMenuRecepcion" class="btn-menu" onclick="cambiarVista('ingreso')">Documentación de Ingreso</button>
+    </div>
+
+    <!-- VISTA 1: SALIDA / PUESTA A DISPOSICIÓN -->
+    <div id="vistaSalida">
+      <form id="mainForm">
+        <div class="card">
+          <div class="form-group">
+            <label for="operario">Operario de Ingreso</label>
+            <select id="operario" required>
+              <option value="" disabled selected>Seleccione operario...</option>
+              <option value="Operario 1">Operario 1</option>
+              <option value="Operario 2">Operario 2</option>
+              <option value="Operario 3">Operario 3</option>
+              <option value="Operario 4">Operario 4</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ruta">Ruta de Reparto</label>
+            <select id="ruta" required>
+              <option value="" disabled selected>Seleccione ruta...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card scan-card">
+          <h3>Escaneo de Documentación QR</h3>
+          <div class="scan-type-selector">
+            <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
+            <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
+          </div>
+
+          <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
+          <div id="reader-container" class="reader-container hidden">
+            <div id="reader"></div>
+          </div>
+
+          <div class="transfer-toggle">
+            <label>
+              <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
+            </label>
+          </div>
+
+          <div class="scanned-list-box">
+            <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
+            <ul id="listaDocs" class="doc-list"></ul>
+          </div>
+        </div>
+
+        <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
+      </form>
+    </div>
+
+    <!-- VISTA 2: INGRESO / RECEPCIÓN -->
+    <div id="vistaIngreso" class="hidden">
       <div class="card">
-        <div class="form-group">
-          <label for="operario">Operario de Ingreso</label>
-          <select id="operario" required>
-            <option value="" disabled selected>Seleccione operario...</option>
-            <option value="Operario 1">Operario 1</option>
-            <option value="Operario 2">Operario 2</option>
-            <option value="Operario 3">Operario 3</option>
-            <option value="Operario 4">Operario 4</option>
-          </select>
+        <h3>Recepción / Ingreso Único de Documento</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem;">Escanee o ingrese el código para marcar la recepción en el sistema.</p>
+        
+        <div class="form-group" style="margin-top: 15px;">
+          <label for="inputCodigoIngreso">Código de Documento</label>
+          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba y presione Enter..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
         </div>
 
-        <div class="form-group">
-          <label for="ruta">Ruta de Reparto</label>
-          <select id="ruta" required>
-            <option value="" disabled selected>Seleccione ruta...</option>
-          </select>
+        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera" style="margin-top: 10px;">📷 Iniciar Escáner QR (Ingreso)</button>
+        <div id="reader-container-ingreso" class="reader-container hidden" style="margin-top: 10px;">
+          <div id="reader-ingreso"></div>
         </div>
+
+        <div id="resultadoIngresoMsg" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
       </div>
+    </div>
 
-      <!-- Zona de Escaneo Múltiple -->
-      <div class="card scan-card">
-        <h3>Escaneo de Documentación QR</h3>
-        <div class="scan-type-selector">
-          <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
-          <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
-        </div>
-
-        <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
-        <div id="reader-container" class="reader-container hidden">
-          <div id="reader"></div>
-        </div>
-
-        <div class="transfer-toggle">
-          <label>
-            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
-          </label>
-        </div>
-
-        <!-- Lista de Documentos Escaneados en Cola -->
-        <div class="scanned-list-box">
-          <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
-          <ul id="listaDocs" class="doc-list"></ul>
-        </div>
-      </div>
-
-      <!-- Botón de Guardado -->
-      <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
-
-    </form>
   </main>
 
   <!-- Drawer Lateral Historial -->
@@ -127,7 +166,6 @@
     </div>
   </div>
 
-  <!-- Nombre en minúsculas para coincidir con script.js -->
   <script src="script.js"></script>
 </body>
 </html>
