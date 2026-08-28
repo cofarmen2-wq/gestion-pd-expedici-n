@@ -59,6 +59,7 @@ function cambiarVista(tipo) {
   const btnReg = document.getElementById("btnMenuRegistro"); 
   const btnRec = document.getElementById("btnMenuRecepcion"); 
 
+  // Detener cámara de salidas si está activa
   if (lectorQr) {
     lectorQr.stop().then(() => lectorQr.clear()).catch(() => {}); 
     lectorQr = null; 
@@ -67,6 +68,7 @@ function cambiarVista(tipo) {
     if (btnCam) btnCam.textContent = "📷 Iniciar Escáner QR"; 
   } 
 
+  // Detener cámara de ingresos si está activa
   if (lectorQrIngreso) {
     lectorQrIngreso.stop().then(() => lectorQrIngreso.clear()).catch(() => {}); 
     lectorQrIngreso = null; 
@@ -82,7 +84,7 @@ function cambiarVista(tipo) {
     vIngreso.classList.add("hidden"); 
     if (btnReg) btnReg.style.backgroundColor = "#0284c7"; 
     if (btnRec) btnRec.style.backgroundColor = "#334155"; 
-  } else {
+  } else if (tipo === 'ingreso') {
     vSalida.classList.add("hidden"); 
     vIngreso.classList.remove("hidden"); 
     if (btnRec) btnRec.style.backgroundColor = "#0284c7"; 
