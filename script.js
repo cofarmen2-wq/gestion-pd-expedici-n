@@ -370,8 +370,12 @@ function cerrarHistorialDrawer() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  actualizarRutas();
+  // 1. Forzar la carga del turno y las rutas al iniciar
+  if (typeof actualizarRutas === "function") {
+    actualizarRutas();
+  }
 
+  // 2. Listeners para entradas manuales
   const inputManual = document.getElementById("inputManualDoc");
   if (inputManual) {
     inputManual.addEventListener("keydown", (e) => {
