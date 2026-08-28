@@ -6,36 +6,6 @@
   <title>Gestión de Mercadería</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .logo-cofar {
-      max-height: 45px;
-      width: auto;
-      object-fit: contain;
-      transition: transform 0.3s ease, filter 0.3s ease;
-      cursor: pointer;
-    }
-    .logo-cofar:hover {
-      transform: scale(1.08);
-      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
-    }
-    .nav-menu {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      justify-content: center;
-    }
-    .btn-menu {
-      padding: 10px 20px;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      color: #fff;
-      background-color: #334155;
-      transition: background-color 0.2s;
-    }
-    .hidden { display: none !important; }
-  </style>
 </head>
 <body>
 
@@ -55,12 +25,12 @@
     
     <!-- Menú de Navegación entre Vistas -->
     <div class="nav-menu">
-      <button type="button" id="btnMenuRegistro" class="btn-menu" style="background-color: #0284c7;" onclick="cambiarVista('salida')">Puesta a Disposición (Salida)</button>
+      <button type="button" id="btnMenuRegistro" class="btn-menu active" onclick="cambiarVista('salida')">Puesta a Disposición (Salida)</button>
       <button type="button" id="btnMenuRecepcion" class="btn-menu" onclick="cambiarVista('ingreso')">Documentación de Ingreso</button>
     </div>
 
     <!-- VISTA 1: SALIDA / PUESTA A DISPOSICIÓN -->
-    <div id="vistaSalida">
+    <div id="vistaSalida" class="vista-seccion">
       <form id="mainForm">
         <div class="card">
           <div class="form-group">
@@ -111,18 +81,18 @@
     </div>
 
     <!-- VISTA 2: INGRESO / RECEPCIÓN -->
-    <div id="vistaIngreso" class="hidden">
+    <div id="vistaIngreso" class="vista-seccion hidden">
       <div class="card">
         <h3>Recepción / Ingreso Único de Documento</h3>
-        <p style="color: #94a3b8; font-size: 0.9rem;">Escanee o ingrese el código para marcar la recepción en el sistema.</p>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Escanee o ingrese el código para marcar la recepción en el sistema.</p>
         
-        <div class="form-group" style="margin-top: 15px;">
+        <div class="form-group">
           <label for="inputCodigoIngreso">Código de Documento</label>
-          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba y presione Enter..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba y presione Enter...">
         </div>
 
-        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera" style="margin-top: 10px;">📷 Iniciar Escáner QR (Ingreso)</button>
-        <div id="reader-container-ingreso" class="reader-container hidden" style="margin-top: 10px;">
+        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera">📷 Iniciar Escáner QR (Ingreso)</button>
+        <div id="reader-container-ingreso" class="reader-container hidden">
           <div id="reader-ingreso"></div>
         </div>
 
@@ -131,6 +101,14 @@
     </div>
 
   </main>
+
+  <!-- Overlay de Carga (Loading Bar / Spinner) -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-spinner-box">
+      <div class="spinner"></div>
+      <p id="loadingText">Procesando lote, por favor espere...</p>
+    </div>
+  </div>
 
   <!-- Drawer Lateral Historial -->
   <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
