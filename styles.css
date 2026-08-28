@@ -12,6 +12,11 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding-bottom: 30px; }
 
+/* REGLA CRÍTICA PARA OCULTAR ELEMENTOS */
+.hidden {
+  display: none !important;
+}
+
 .app-header { background: var(--bg-card); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
 .header-content h1 { font-size: 1.2rem; font-weight: 600; }
 .turno-badge { font-size: 0.8rem; background: #334155; padding: 3px 8px; border-radius: 4px; color: #60a5fa; margin-top: 4px; display: inline-block; }
@@ -24,7 +29,6 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
 .form-section { background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-.hidden { display: none !important; }
 
 .input-group { margin-bottom: 15px; }
 .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-muted); }
