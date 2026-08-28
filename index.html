@@ -3,147 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Mercadería</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link rel="stylesheet" href="styles.css">
+  <title>Gestión de Mercadería - Puesta a Disposición</title>
+  <?!= include('style'); ?>
 </head>
 <body>
-
-  <!-- Barra Superior -->
-  <header class="top-bar">
-    <div class="logo-box">
-      <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
+  <header class="app-header">
+    <div class="header-content">
+      <h1>Logística Puesta a Disposición</h1>
+      <div class="turno-badge" id="turnoBadge">TURNO: <span id="turnoTexto">CARGANDO...</span></div>
     </div>
-    <div class="title-box">
-      <h2>Logística Puesta a Disposición</h2>
-      <span id="turnoBadge" class="badge">TURNO -</span>
-    </div>
-    <button type="button" class="btn-drawer-open" id="btnOpenDrawer">☰ Historial</button>
+    <button class="btn-historial" onclick="abrirHistorial()">📋 Historial</button>
   </header>
 
-  <main class="container">
-    
-    <!-- Menú de Navegación entre Vistas -->
-    <div class="nav-menu">
-      <button type="button" id="btnMenuRegistro" class="btn-menu active" onclick="cambiarVista('salida')">Puesta a Disposición (Salida)</button>
-      <button type="button" id="btnMenuRecepcion" class="btn-menu" onclick="cambiarVista('ingreso')">Documentación de Ingreso</button>
+  <main class="main-container">
+    <div class="view-selector">
+      <button id="btnVistaLote" class="view-btn active" onclick="cambiarVista('lote')">Puesta a Disposición (Salida)</button>
+      <button id="btnVistaIngreso" class="view-btn" onclick="cambiarVista('ingreso')">Documentación de Ingreso</button>
     </div>
 
-    <!-- VISTA 1: SALIDA / PUESTA A DISPOSICIÓN -->
-    <div id="vistaSalida" class="vista-seccion">
-      <form id="mainForm">
-        <div class="card">
-          <div class="form-group">
-            <label for="operario">Operario de Ingreso</label>
-            <select id="operario" required>
-              <option value="" disabled selected>Seleccione operario...</option>
-              <option value="Operario 1">Operario 1</option>
-              <option value="Operario 2">Operario 2</option>
-              <option value="Operario 3">Operario 3</option>
-              <option value="Operario 4">Operario 4</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="ruta">Ruta de Reparto</label>
-            <select id="ruta" required>
-              <option value="" disabled selected>Seleccione ruta...</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="card scan-card">
-          <h3>Escaneo de Documentación QR</h3>
-          <div class="scan-type-selector">
-            <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
-            <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
-          </div>
-
-          <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
-          <div id="reader-container" class="reader-container hidden">
-            <div id="reader"></div>
-          </div>
-
-          <div class="transfer-toggle">
-            <label>
-              <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
-            </label>
-          </div>
-
-          <div class="scanned-list-box">
-            <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
-            <ul id="listaDocs" class="doc-list"></ul>
-          </div>
-        </div>
-
-        <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
-      </form>
-    </div>
-
-    <!-- VISTA 2: INGRESO / RECEPCIÓN -->
-    <div id="vistaIngreso" class="vista-seccion hidden">
-      <div class="card">
-        <h3>Recepción / Ingreso Único de Documento</h3>
-        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Escanee o ingrese el código para marcar la recepción en el sistema.</p>
-        
-        <div class="form-group">
-          <label for="inputCodigoIngreso">Código de Documento</label>
-          <input type="text" id="inputCodigoIngreso" placeholder="Escanee o escriba y presione Enter...">
-        </div>
-
-        <button type="button" id="btnToggleCamaraIngreso" class="btn-camera">📷 Iniciar Escáner QR (Ingreso)</button>
-        <div id="reader-container-ingreso" class="reader-container hidden">
-          <div id="reader-ingreso"></div>
-        </div>
-
-        <div id="resultadoIngresoMsg" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
+    <!-- SECCIÓN 1: PUESTA A DISPOSICIÓN (LOTE) -->
+    <section id="seccionLote" class="form-section">
+      <div class="input-group">
+        <label for="operarioInput">Operario de Ingreso</label>
+        <select id="operarioInput" class="form-control">
+          <option value="">Seleccione operario...</option>
+          <option value="Operario 1">Operario 1</option>
+          <option value="Operario 2">Operario 2</option>
+          <option value="Operario 3">Operario 3</option>
+          <option value="Supervisor">Supervisor</option>
+        </select>
       </div>
-    </div>
 
+      <div class="input-group">
+        <label for="turnoSelect">Turno</label>
+        <select id="turnoSelect" class="form-control" onchange="actualizarRutasPorTurno()">
+          <option value="MAÑANA">Mañana</option>
+          <option value="TARDE">Tarde</option>
+          <option value="NOCHE">Noche</option>
+          <option value="FUERA DE TURNO">Fuera de Turno</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="rutaSelect">Ruta de Reparto</label>
+        <select id="rutaSelect" class="form-control">
+          <option value="">Seleccione ruta...</option>
+        </select>
+      </div>
+
+      <div class="scanner-card">
+        <h3>Escaneo de Documentación QR</h3>
+        <div class="radio-group">
+          <label><input type="radio" name="tipoEscaneo" value="salida" checked> Doc. Salida</label>
+          <label><input type="radio" name="tipoEscaneo" value="ingreso"> Doc. Ingreso</label>
+        </div>
+        
+        <button class="btn-primary" onclick="iniciarEscannerSalida()">📷 Iniciar Escáner QR</button>
+        <div id="reader" class="hidden"></div>
+
+        <div class="manual-input-row">
+          <input type="text" id="codigoInput" class="form-control" placeholder="Ingrese o escanee código..." onkeypress="if(event.key === 'Enter') agregarDocumentoManual()">
+          <button class="btn-secondary" onclick="agregarDocumentoManual()">Agregar</button>
+        </div>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="checkTransfer" onchange="toggleTransferencia()"> ¿Es Documentación TRANSFER?
+        </label>
+      </div>
+
+      <div class="documents-list-container">
+        <h3>Documentos en Lote (<span id="contadorDocs">0</span>)</h3>
+        <ul id="listaDocumentos" class="doc-list"></ul>
+      </div>
+
+      <button class="btn-success-lg" onclick="enviarLote()">FINALIZAR REGISTRO</button>
+    </section>
+
+    <!-- SECCIÓN 2: DOCUMENTACIÓN DE INGRESO -->
+    <section id="seccionIngreso" class="form-section hidden">
+      <div class="scanner-card">
+        <h3>Registro Rápido de Ingreso Unitario</h3>
+        <button class="btn-primary" onclick="iniciarEscannerIngreso()">📷 Escanear Ingreso QR</button>
+        <div id="readerIngreso" class="hidden"></div>
+
+        <div class="manual-input-row">
+          <input type="text" id="codigoIngresoInput" class="form-control" placeholder="Código de documento de salida..." onkeypress="if(event.key === 'Enter') registrarIngresoUnitario()">
+          <button class="btn-success" onclick="registrarIngresoUnitario()">Registrar Ingreso</button>
+        </div>
+      </div>
+
+      <div class="history-container">
+        <h3>Historial Reciente</h3>
+        <div id="historialRecienteLista"></div>
+      </div>
+    </section>
   </main>
 
-  <!-- Overlay de Carga (Loading Bar / Spinner) -->
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="loading-spinner-box">
-      <div class="spinner"></div>
-      <p id="loadingText">Procesando lote, por favor espere...</p>
-    </div>
-  </div>
-
-  <!-- Drawer Lateral Historial -->
-  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
-  <aside id="drawer" class="drawer hidden">
-    <div class="drawer-header">
-      <h3>Historial Reciente</h3>
-      <button id="btnCloseDrawer" class="btn-close">✕</button>
-    </div>
-    <div id="historialContent" class="drawer-body">
-      <p class="loading-text">Cargando datos...</p>
-    </div>
-  </aside>
-
-  <!-- Modal Push Checklist para TRANSFER -->
-  <div id="modalTransfer" class="modal-backdrop hidden">
-    <div class="modal">
-      <h3>Checklist Documentación TRANSFER</h3>
-      <p id="transferDocLabel" class="doc-badge-modal"></p>
-      
-      <div class="checklist-group">
-        <label>1. ¿Firma y sello correctos?
-          <select id="chk1"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>2. ¿Estado de la carga verificado?
-          <select id="chk2"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>3. ¿Número de precinto coincide?
-          <select id="chk3"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
+  <!-- MODAL TRANSFERENCIA -->
+  <div id="modalTransfer" class="modal hidden">
+    <div class="modal-content">
+      <h3>Configurar Transferencia: <span id="modalDocCode"></span></h3>
+      <label>Origen:</label>
+      <input type="text" id="transOrigen" class="form-control" value="CD Central">
+      <label>Destino:</label>
+      <input type="text" id="transDestino" class="form-control" value="Sucursal">
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="cerrarModalTransferencia(false)">Cancelar</button>
+        <button class="btn-primary" onclick="cerrarModalTransferencia(true)">Aceptar</button>
       </div>
-
-      <button type="button" id="btnConfirmTransfer" class="btn-submit">Confirmar Documento Transfer</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- OVERLAY DE CARGA -->
+  <div id="loadingOverlay" class="overlay hidden">
+    <div class="spinner"></div>
+    <p id="loadingText">Procesando...</p>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <?!= include('script'); ?>
 </body>
 </html>
