@@ -300,7 +300,8 @@ function enviarIngresoUnico(codigo) {
   const msgDiv = document.getElementById("resultadoIngresoMsg");
   if (!codigoLimpio) return;
 
-  mostrarLoading("Registrando ingreso...");
+  // Mostrar estado de carga visual si lo tienes implementado
+  if (typeof mostrarLoading === "function") mostrarLoading("Verificando documento...");
 
   fetch(SCRIPT_URL, {
     method: "POST",
@@ -308,24 +309,43 @@ function enviarIngresoUnico(codigo) {
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ accion: "registrarIngresoUnico", codigoDoc: codigoLimpio })
   })
-  .then(() => {
-    ocultarLoading();
+  .then(res => res.json())
+  .then(response => {
+    if (typeof ocultarLoading === "function") ocultarLoading();
+    
     if (msgDiv) {
-      msgDiv.style.color = "#4ade80";
-      msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} registrado en ingresos.`;
+      // Verificamos si el backend respondió con un estado de ERROR
+      if (response && response.status === "ERROR") {
+        msgDiv.style.backgroundColor = "#fee2e2";
+        msgDiv.style.color = "#dc2626";
+        msgDiv.style.border = "1px solid #f87171";
+        msgDiv.textContent = response.message;
+        
+        // Alerta emergente en pantalla para asegurarnos de que el operario lo note
+        alert(response.message); 
+      } else {
+        msgDiv.style.backgroundColor = "#dcfce7";
+        msgDiv.style.color = "#16a34a";
+        msgDiv.style.border = "1px solid #4ade80";
+        msgDiv.textContent = `¡Éxito! Documento ${codigoLimpio} registrado en ingresos.`;
+      }
     }
+    
     const inputIngreso = document.getElementById("inputCodigoIngreso");
     if (inputIngreso) {
       inputIngreso.value = "";
       inputIngreso.focus();
     }
-    setTimeout(() => { if (msgDiv) msgDiv.textContent = ""; }, 4000);
   })
   .catch(err => {
-    ocultarLoading();
+    if (typeof ocultarLoading === "function") ocultarLoading();
+    // Nota: Como 'no-cors' a veces oscurece la respuesta del fetch directo, 
+    // asegúrate de que tu despliegue de Apps Script esté actualizado y permita lectura de JSON, 
+    // o maneja la validación visual principal desde la respuesta del servidor.
     if (msgDiv) {
-      msgDiv.style.color = "#ef4444";
-      msgDiv.textContent = `Error: ${err}`;
+      msgDiv.style.backgroundColor = "#fee2e2";
+      msgDiv.style.color = "#dc2626";
+      msgDiv.textContent = `Error al procesar la solicitud.`;
     }
   });
 }
