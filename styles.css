@@ -17,7 +17,6 @@ body {
   display: none !important;
 }
 
-/* Header & Menú de Vistas */
 .top-bar {
   background-color: #1e293b;
   padding: 1rem;
@@ -93,7 +92,6 @@ body {
   background-color: #475569;
 }
 
-/* Form Layout */
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -141,7 +139,6 @@ select:focus, input[type="text"]:focus {
   border-color: #38bdf8;
 }
 
-/* Vista de Ingresos */
 .ingreso-card {
   text-align: center;
   padding: 1.5rem 1.2rem;
@@ -184,7 +181,6 @@ select:focus, input[type="text"]:focus {
   min-height: 1.5rem;
 }
 
-/* QR and Scanned Elements */
 .scan-card h3 {
   font-size: 1rem;
   margin-bottom: 0.8rem;
@@ -296,13 +292,6 @@ select:focus, input[type="text"]:focus {
   background-color: #15803d;
 }
 
-.btn-submit:disabled {
-  background-color: #475569;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Modals & Drawer */
 .drawer-backdrop, .modal-backdrop {
   position: fixed;
   top: 0;
@@ -389,7 +378,6 @@ select:focus, input[type="text"]:focus {
   padding: 0.3rem;
 }
 
-/* Loading Overlay */
 .loading-overlay {
   position: fixed;
   top: 0;
