@@ -1,4 +1,3 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyTNx8YSY3ry1cg3k78ldOHtNLFdFfJwNXHuj_ng8bNEVxUch8tzecdPrwV3UHFkngDg/exec";
 const documentos = [];
 let lectorQr = null;
 let procesandoEscaneo = false;
@@ -6,6 +5,7 @@ let modoVista = "SALIDA";
 let loteLoadingTimer = null;
 const OPERARIOS_CACHE_KEY = "operariosCache";
 const ULTIMO_OPERARIO_KEY = "ultimoOperario";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyTNx8YSY3ry1cg3k78ldOHtNLFdFfJwNXHuj_ng8bNEVxUch8tzecdPrwV3UHFkngDg/exec";
 
 const rutasPorTurno = {
   MAÑANA: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"],
@@ -15,10 +15,10 @@ const rutasPorTurno = {
 };
 
 function obtenerTurno(fecha = new Date()) {
-  const minutos = fecha.getHours() * 60 + fecha.getMinutes();
-  if (minutos >= 390 && minutos <= 720) return "MAÑANA";
-  if (minutos >= 721 && minutos <= 1260) return "TARDE";
-  if (minutos >= 1261) return "NOCHE";
+  const hora = fecha.getHours();
+  if (hora >= 18 || hora < 6) return "NOCHE";
+  if (hora >= 6 && hora < 14) return "MAÑANA";
+  if (hora >= 14 && hora < 18) return "TARDE";
   return "FUERA DE TURNO";
 }
 
@@ -139,12 +139,17 @@ function actualizarRutas() {
   const selectorRuta = document.getElementById("ruta");
   if (!selectorRuta) return;
   const turno = obtenerTurno();
-  document.getElementById("turnoBadge").textContent = `TURNO ${turno}`;
+  const rutasDelTurno = rutasPorTurno[turno] && rutasPorTurno[turno].length ? rutasPorTurno[turno] : rutasPorTurno.NOCHE;
+  const turnoMostrado = rutasDelTurno ? turno : "NOCHE";
+
+  const badge = document.getElementById("turnoBadge");
+  if (badge) badge.textContent = `TURNO ${turnoMostrado}`;
+
   selectorRuta.replaceChildren(new Option("Seleccione ruta...", "", true, true));
   selectorRuta.options[0].disabled = true;
 
-  if (rutasPorTurno[turno]) {
-    rutasPorTurno[turno].forEach(ruta => selectorRuta.add(new Option(ruta, ruta)));
+  if (rutasDelTurno) {
+    rutasDelTurno.forEach(ruta => selectorRuta.add(new Option(ruta, ruta)));
   }
 }
 
