@@ -1,155 +1,201 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Mercadería</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .logo-cofar {
-      max-height: 45px;
-      width: auto;
-      object-fit: contain;
-      transition: transform 0.3s ease, filter 0.3s ease;
-      cursor: pointer;
-    }
-    .logo-cofar:hover {
-      transform: scale(1.08);
-      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
-    }
-    .view-switcher {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-      padding: 6px;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-    }
-    .view-switch {
-      padding: 11px 12px;
-      border-radius: 10px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--muted);
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .view-switch.active {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.14));
-      color: var(--primary);
-      border-color: rgba(56, 189, 248, 0.5);
-      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.18);
-    }
-    .tab-panel {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <header class="top-bar">
-    <div class="logo-box">
-      <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
-    </div>
-    <div class="title-box">
-      <h2>Logística Puesta a Disposición</h2>
-      <span id="turnoBadge" class="badge">TURNO -</span>
-    </div>
-    <button type="button" class="btn-drawer-open" id="btnOpenDrawer">☰ Historial</button>
-  </header>
 
-  <main class="container">
-    <form id="mainForm">
-      <div class="card">
-        <div class="view-switcher" role="tablist" aria-label="Pestañas de registro">
-          <button type="button" class="view-switch active" data-vista="SALIDA" aria-pressed="true" role="tab" aria-selected="true" aria-controls="vistaSalida" id="tabSalida">Documento de salida</button>
-          <button type="button" class="view-switch" data-vista="INGRESO" aria-pressed="false" role="tab" aria-selected="false" aria-controls="vistaIngreso" id="tabIngreso">Documentación ingreso</button>
-        </div>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --primary: #38bdf8;
+    --accent: #6366f1;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --border: #334155;
+    --radius: 12px;
+  }
 
-        <div id="vistaSalida" class="tab-panel" role="tabpanel" aria-labelledby="tabSalida">
-          <div class="form-group">
-            <label for="operario">Operario</label>
-            <input type="text" id="operario" list="operariosLista" placeholder="Ingrese el operario..." required>
-          </div>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+  body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 30px; }
 
-          <div class="form-group">
-            <label for="ruta">Ruta de Reparto</label>
-            <select id="ruta" required>
-              <option value="" disabled selected>Seleccione ruta...</option>
-            </select>
-          </div>
+  /* Topbar */
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.35);
+  }
+  .logo-box {
+    width: 52px; height: 52px; border-radius: 50%; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 30% 30%, rgba(125, 211, 252, 0.75), rgba(30, 41, 59, 0.9));
+    border: 2px solid rgba(56, 189, 248, 0.8); box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+  }
+  .logo-cofar {
+    max-height: 46px; width: auto; object-fit: contain; border-radius: 50%;
+    transition: transform 0.3s ease, filter 0.3s ease; filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+  }
+  .logo-cofar:hover {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
+  }
+  .title-box h2 { font-size: 0.95rem; }
+  .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; background: var(--accent); }
 
-          <div class="form-group metric-grid">
-            <div>
-              <label for="cantidadCubetas">Cantidad de cubetas</label>
-              <input type="number" id="cantidadCubetas" min="0" value="0">
-            </div>
-            <div>
-              <label for="cantidadCadenasFrio">Cantidad de cadenas de frío</label>
-              <input type="number" id="cantidadCadenasFrio" min="0" value="0">
-            </div>
-            <div>
-              <label for="cantidadBultos">Cantidad de bultos</label>
-              <input type="number" id="cantidadBultos" min="0" value="0">
-            </div>
-          </div>
-        </div>
+  .btn-drawer-open {
+    background: transparent; border: 1px solid var(--primary); color: var(--primary);
+    padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+  }
 
-        <div id="vistaIngreso" class="tab-panel hidden" role="tabpanel" aria-labelledby="tabIngreso">
-          <div class="form-group">
-            <label for="operarioIngreso">Operario</label>
-            <input type="text" id="operarioIngreso" list="operariosLista" placeholder="Ingrese el operario..." required>
-          </div>
-        </div>
-      </div>
+  /* Layout */
+  .container { padding: 14px; max-width: 600px; margin: 0 auto; }
+  .card { background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96)); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35); }
 
-      <div class="card scan-card">
-        <h3>Escaneo de Documentación QR</h3>
-        <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
-        <div id="reader-container" class="reader-container hidden">
-          <div id="reader"></div>
-        </div>
+  .view-switcher {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+  .view-switch {
+    padding: 11px 10px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .view-switch.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.16));
+    color: var(--primary);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.14);
+  }
+  .tab-panel {
+    display: block;
+  }
+  
+  .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .metric-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    margin-top: 12px; padding: 10px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(56, 189, 248, 0.18); border-radius: 10px;
+  }
+  .metric-grid > div {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .metric-grid label {
+    font-size: 0.72rem; color: var(--muted); font-weight: 700;
+  }
+  label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+  select, input[type="text"], input[type="number"] {
+    width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--border);
+    border-radius: 8px; color: #fff; font-size: 0.95rem; outline: none;
+  }
+  input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
 
-        <div id="loadingBarContainer" class="loading-overlay hidden" aria-live="polite">
-          <div class="loading-card">
-            <div class="loading-spinner"></div>
-            <div id="loadingBarText" class="loading-title">Cargando datos</div>
-            <div id="loadingBarPercent" class="loading-subtitle">procesando lote...</div>
-          </div>
-        </div>
+  /* Escáner */
+  .scan-type-selector { display: flex; gap: 16px; margin-bottom: 12px; font-size: 0.85rem; color: #fff; }
+  .btn-camera {
+    width: 100%; padding: 12px; background: rgba(56, 189, 248, 0.15);
+    border: 1px solid var(--primary); color: var(--primary); border-radius: 8px;
+    font-weight: bold; cursor: pointer; margin-bottom: 10px;
+  }
+  .reader-container { border-radius: 8px; overflow: hidden; border: 1px solid var(--primary); margin-bottom: 10px; }
+  .hidden { display: none !important; }
 
-        <div class="scanned-list-box">
-          <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
-          <ul id="listaDocs" class="doc-list"></ul>
-        </div>
+  .transfer-toggle {
+    margin: 12px 0 0; padding: 10px 12px; border: 1px solid rgba(99, 102, 241, 0.22);
+    background: rgba(99, 102, 241, 0.08); border-radius: 8px; font-size: 0.85rem;
+  }
+  .transfer-toggle label {
+    display: flex; align-items: center; gap: 8px; color: #e2e8f0; font-weight: 600;
+  }
 
-        <div class="transfer-toggle">
-          <label>
-            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
-          </label>
-        </div>
-      </div>
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.42);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  .loading-card {
+    width: min(240px, 72vw);
+    padding: 22px 18px 16px;
+    border-radius: 22px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(52, 211, 153, 0.45);
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.18), inset 0 0 18px rgba(52, 211, 153, 0.08);
+    text-align: center;
+  }
+  .loading-spinner {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    border: 4px solid rgba(52, 211, 153, 0.18);
+    border-top-color: #34d399;
+    border-right-color: #6ee7b7;
+    animation: spinLoader 0.9s linear infinite;
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.5);
+  }
+  .loading-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e6fff6;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+  .loading-subtitle {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: #a7f3d0;
+    text-transform: lowercase;
+  }
+  @keyframes spinLoader {
+    to { transform: rotate(360deg); }
+  }
 
-      <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
-    </form>
-  </main>
+  /* Lista de Escaneados */
+  .scanned-list-box { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+  .scanned-list-box h4 { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+  .doc-list { list-style: none; max-height: 180px; overflow-y: auto; }
+  .doc-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem;
+  }
 
-  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
-  <aside id="drawer" class="drawer hidden">
-    <div class="drawer-header">
-      <h3>Historial Reciente</h3>
-      <button id="btnCloseDrawer" class="btn-close">✕</button>
-    </div>
-    <div id="historialContent" class="drawer-body">
-      <p class="loading-text">Cargando datos...</p>
-    </div>
-  </aside>
+  .btn-submit {
+    width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none; border-radius: var(--radius); color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer;
+  }
 
-  <datalist id="operariosLista"></datalist>
+  /* Drawer Lateral */
+  .drawer-backdrop, .modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.7); z-index: 100;
+  }
+  .drawer {
+    position: fixed; top: 0; right: 0; width: 80%; max-width: 320px; height: 100vh;
+    background: var(--card); z-index: 101; padding: 16px; display: flex; flex-direction: column;
+    border-left: 1px solid var(--border); transition: transform 0.3s ease;
+  }
+  .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .btn-close { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
+  .drawer-body { overflow-y: auto; flex: 1; }
+  .history-card { background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.78rem; }
 
-  <script src="script.js"></script>
-</body>
-</html>
+  /* Modal Checklist */
+  .modal {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; width: 90%; max-width: 400px;
+  }
+  .doc-badge-modal { font-size: 0.8rem; color: var(--primary); margin: 8px 0 14px 0; font-weight: bold; }
+  .checklist-group label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #fff; }
+  .checklist-group select { width: 80px; padding: 4px; }
