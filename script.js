@@ -173,6 +173,42 @@ function renderizarDocumentos() {
   });
 }
 
+function limpiarFormulario() {
+  documentos.length = 0;
+  renderizarDocumentos();
+
+  const form = document.getElementById("mainForm");
+  if (form) form.reset();
+
+  ["operario", "operarioIngreso", "ruta", "cantidadCubetas", "cantidadCadenasFrio", "cantidadBultos"].forEach(id => {
+    const campo = document.getElementById(id);
+    if (!campo) return;
+
+    if (id === "ruta") {
+      campo.value = "";
+      return;
+    }
+
+    if (id.includes("cantidad")) {
+      campo.value = "0";
+      return;
+    }
+
+    campo.value = "";
+  });
+
+  const transferencia = document.getElementById("checkEsTransfer");
+  if (transferencia) transferencia.checked = false;
+
+  const ruta = document.getElementById("ruta");
+  if (ruta) {
+    actualizarRutas();
+    ruta.value = "";
+  }
+
+  procesandoEscaneo = false;
+}
+
 function agregarDocumento(codigoDoc) {
   const codigo = String(codigoDoc || "").trim();
   if (procesandoEscaneo || !codigo || documentos.some(documento => documento.codigoDoc === codigo)) return;
@@ -209,6 +245,17 @@ function registrarDocumento(documento) {
     return;
   }
 
+  const codigoDoc = String(documento.codigoDoc || "").trim();
+  if (!codigoDoc) {
+    alert("El documento no tiene código válido.");
+    return;
+  }
+
+  if (documentos.some(doc => String(doc.codigoDoc || "").trim() === codigoDoc)) {
+    alert(`El documento ${codigoDoc} ya existe en la base de datos.`);
+    return;
+  }
+
   guardarOperarioEnCache();
   mostrarCargaLote("Cargando lote...");
   procesandoEscaneo = true;
@@ -225,11 +272,12 @@ function registrarDocumento(documento) {
   })
   .then(response => response.json())
   .then(data => {
-    if (data.status === "success") {
+    const status = data && data.status;
+    if (status === "OK" || status === "success" || status === "SUCCESS") {
       documentos.push(documentoFinal);
       renderizarDocumentos();
     } else {
-      alert(`Error en el servidor: ${data.message}`);
+      alert(data && data.message ? data.message : "Error en el servidor.");
     }
   })
   .catch(error => {
@@ -283,7 +331,9 @@ function guardarLote(evento) {
   mostrarCargaLote("Finalizando lote...");
   setTimeout(() => {
     ocultarCargaLote();
-    alert(`Se registraron ${documentos.length} documento(s) durante el turno.`);
+    const totalRegistrados = documentos.length;
+    limpiarFormulario();
+    alert(`Se registraron ${totalRegistrados} documento(s) durante el turno.`);
   }, 400);
 }
 
