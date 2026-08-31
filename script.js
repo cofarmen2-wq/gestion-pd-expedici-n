@@ -160,9 +160,10 @@ function renderizarDocumentos() {
   total.textContent = documentos.length;
   lista.replaceChildren();
   documentos.forEach((documento, indice) => {
+    const numeroLote = documento.numeroLote || documento.codigoDoc || "SIN LOTE";
     const item = document.createElement("li");
     item.className = "doc-item";
-    item.textContent = `${documento.codigoDoc} - ${documento.tipoDoc}${documento.esTransfer ? " - TRANSFER" : ""}`;
+    item.textContent = `${numeroLote} - ${documento.tipoDoc}${documento.esTransfer ? " - TRANSFER" : ""}`;
     const eliminar = document.createElement("button");
     eliminar.type = "button";
     eliminar.className = "btn-close";
@@ -212,10 +213,12 @@ function limpiarFormulario() {
 
 function agregarDocumento(codigoDoc) {
   const codigo = String(codigoDoc || "").trim();
-  if (procesandoEscaneo || !codigo || documentos.some(documento => documento.codigoDoc === codigo)) return;
+  const numeroLote = codigo;
+  if (procesandoEscaneo || !codigo || documentos.some(documento => (documento.numeroLote || documento.codigoDoc) === codigo)) return;
 
   const esTransfer = modoVista === "SALIDA" && document.getElementById("checkEsTransfer").checked;
   const documento = {
+    numeroLote,
     codigoDoc: codigo,
     tipoDoc: modoVista === "INGRESO" ? "INGRESO" : "SALIDA",
     esTransfer,
@@ -246,14 +249,14 @@ function registrarDocumento(documento) {
     return;
   }
 
-  const codigoDoc = String(documento.codigoDoc || "").trim();
-  if (!codigoDoc) {
-    alert("El documento no tiene código válido.");
+  const numeroLote = String(documento.numeroLote || documento.codigoDoc || "").trim();
+  if (!numeroLote) {
+    alert("El documento no tiene número de lote válido.");
     return;
   }
 
-  if (modoVista === "SALIDA" && documentos.some(doc => String(doc.codigoDoc || "").trim() === codigoDoc)) {
-    alert(`El documento ${codigoDoc} ya existe en la base de datos.`);
+  if (modoVista === "SALIDA" && documentos.some(doc => String(doc.numeroLote || doc.codigoDoc || "").trim() === numeroLote)) {
+    alert(`El documento ${numeroLote} ya existe en la base de datos.`);
     return;
   }
 
@@ -264,7 +267,7 @@ function registrarDocumento(documento) {
   guardarOperarioEnCache();
   mostrarCargaLote("Cargando lote...");
   procesandoEscaneo = true;
-  const documentoFinal = { ...documento, ...cantidades };
+  const documentoFinal = { ...documento, numeroLote: documento.numeroLote || documento.codigoDoc, codigoDoc: documento.codigoDoc || documento.numeroLote, ...cantidades };
   const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
 
   fetch(SCRIPT_URL, {
@@ -335,8 +338,8 @@ function guardarLote(evento) {
 
   const loteSinDuplicados = modoVista === "SALIDA"
     ? documentos.filter(doc => {
-        const codigo = String(doc.codigoDoc || "").trim();
-        const yaExiste = codigo && documentos.some(otro => String(otro.codigoDoc || "").trim() === codigo && otro !== doc);
+        const codigo = String(doc.numeroLote || doc.codigoDoc || "").trim();
+        const yaExiste = codigo && documentos.some(otro => String(otro.numeroLote || otro.codigoDoc || "").trim() === codigo && otro !== doc);
         return !yaExiste;
       })
     : [...documentos];
@@ -353,6 +356,8 @@ function guardarLote(evento) {
     turno: obtenerTurno(),
     documentos: loteSinDuplicados.map(doc => ({
       ...doc,
+      numeroLote: doc.numeroLote || doc.codigoDoc,
+      codigoDoc: doc.codigoDoc || doc.numeroLote,
       cubetas: obtenerCantidad("cantidadCubetas"),
       cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
       bultos: obtenerCantidad("cantidadBultos")
