@@ -319,15 +319,14 @@ function abrirHistorial() {
   document.getElementById("drawer").classList.remove("hidden");
   document.getElementById("drawerBackdrop").classList.remove("hidden");
 
-  if (typeof google !== "undefined" && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(renderizarHistorial).withFailureHandler(() => {
+  fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
+    .then(response => response.json())
+    .then(historial => {
+      renderizarHistorial(historial);
+    })
+    .catch(() => {
       document.getElementById("historialContent").textContent = "No se pudo cargar el historial.";
-    }).obtenerHistorialReciente();
-  } else {
-    renderizarHistorial([
-      { operario: "Operario 1", ruta: "Maipú", puestaDisposicion: "2026-08-27 09:00:00", recepcion: "RECEPCIONADO" }
-    ]);
-  }
+    });
 }
 
 function cerrarHistorial() {
