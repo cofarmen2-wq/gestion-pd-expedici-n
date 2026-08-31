@@ -251,7 +251,7 @@ function registrarDocumento(documento) {
     return;
   }
 
-  if (documentos.some(doc => String(doc.codigoDoc || "").trim() === codigoDoc)) {
+  if (modoVista === "SALIDA" && documentos.some(doc => String(doc.codigoDoc || "").trim() === codigoDoc)) {
     alert(`El documento ${codigoDoc} ya existe en la base de datos.`);
     return;
   }
