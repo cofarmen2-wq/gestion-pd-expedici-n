@@ -1,3 +1,4 @@
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyTNx8YSY3ry1cg3k78ldOHtNLFdFfJwNXHuj_ng8bNEVxUch8tzecdPrwV3UHFkngDg/exec";
 const documentos = [];
 let lectorQr = null;
 let procesandoEscaneo = false;
