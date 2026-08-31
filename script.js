@@ -256,6 +256,10 @@ function registrarDocumento(documento) {
     return;
   }
 
+  if (modoVista === "INGRESO") {
+    // La validación de duplicado solo opera en la vista de salida.
+  }
+
   guardarOperarioEnCache();
   mostrarCargaLote("Cargando lote...");
   procesandoEscaneo = true;
