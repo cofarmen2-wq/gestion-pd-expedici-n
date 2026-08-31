@@ -2,6 +2,7 @@ const documentos = [];
 let lectorQr = null;
 let procesandoEscaneo = false;
 let modoVista = "SALIDA";
+let loteLoadingTimer = null;
 const OPERARIOS_CACHE_KEY = "operariosCache";
 const ULTIMO_OPERARIO_KEY = "ultimoOperario";
 
@@ -43,42 +44,102 @@ function guardarOperarioEnCache() {
 function cargarOperariosDesdeCache() {
   const operariosBase = ["Operario 1", "Operario 2", "Operario 3", "Operario 4"];
   const operarios = [...new Set([...leerOperariosCache(), ...operariosBase])];
-  ["operario", "operarioIngreso"].forEach(id => {
-    const select = document.getElementById(id);
-    if (!select) return;
-    select.replaceChildren(new Option("Seleccione operario...", "", true, true));
-    select.options[0].disabled = true;
-    operarios.forEach(operario => select.add(new Option(operario, operario)));
-  });
+  const datalist = document.getElementById("operariosLista");
+  if (datalist) {
+    datalist.replaceChildren();
+    operarios.forEach(operario => {
+      const opcion = document.createElement("option");
+      opcion.value = operario;
+      datalist.appendChild(opcion);
+    });
+  }
 
   const ultimoOperario = localStorage.getItem(ULTIMO_OPERARIO_KEY);
   ["operario", "operarioIngreso"].forEach(id => {
-    const select = document.getElementById(id);
-    if (select && ultimoOperario && [...select.options].some(option => option.value === ultimoOperario)) {
-      select.value = ultimoOperario;
+    const input = document.getElementById(id);
+    if (input && ultimoOperario) {
+      input.value = ultimoOperario;
     }
   });
+}
+
+function mostrarCargaLote(mensaje = "Cargando lote...") {
+  const contenedor = document.getElementById("loadingBarContainer");
+  const barra = document.getElementById("loadingBar");
+  const texto = document.getElementById("loadingBarText");
+  const porcentaje = document.getElementById("loadingBarPercent");
+  if (!contenedor || !barra || !texto || !porcentaje) return;
+
+  contenedor.classList.remove("hidden");
+  texto.textContent = mensaje;
+  porcentaje.textContent = "0%";
+  barra.style.width = "0%";
+
+  if (loteLoadingTimer) clearInterval(loteLoadingTimer);
+
+  let progreso = 0;
+  loteLoadingTimer = setInterval(() => {
+    progreso = Math.min(progreso + 20, 92);
+    barra.style.width = `${progreso}%`;
+    porcentaje.textContent = `${progreso}%`;
+  }, 180);
+}
+
+function ocultarCargaLote() {
+  const contenedor = document.getElementById("loadingBarContainer");
+  const barra = document.getElementById("loadingBar");
+  const texto = document.getElementById("loadingBarText");
+  const porcentaje = document.getElementById("loadingBarPercent");
+
+  if (loteLoadingTimer) {
+    clearInterval(loteLoadingTimer);
+    loteLoadingTimer = null;
+  }
+
+  if (barra) barra.style.width = "100%";
+  if (porcentaje) porcentaje.textContent = "100%";
+  if (texto) texto.textContent = "Lote cargado";
+
+  if (contenedor) {
+    setTimeout(() => {
+      contenedor.classList.add("hidden");
+      if (barra) barra.style.width = "0%";
+      if (porcentaje) porcentaje.textContent = "0%";
+      if (texto) texto.textContent = "Cargando lote...";
+    }, 350);
+  }
+}
+
+function obtenerCantidad(idCampo) {
+  const valor = Number.parseInt(document.getElementById(idCampo)?.value || "0", 10);
+  return Number.isFinite(valor) ? Math.max(0, valor) : 0;
 }
 
 function setModoVista(nuevoModo) {
   modoVista = nuevoModo;
   const salida = document.getElementById("vistaSalida");
   const ingreso = document.getElementById("vistaIngreso");
+  const operarioSalida = document.getElementById("operario");
+  const operarioIngreso = document.getElementById("operarioIngreso");
+  const transferCheck = document.getElementById("checkEsTransfer");
   const botones = document.querySelectorAll(".view-switch");
 
   if (salida) salida.classList.toggle("hidden", nuevoModo !== "SALIDA");
   if (ingreso) ingreso.classList.toggle("hidden", nuevoModo !== "INGRESO");
+
+  if (transferCheck) {
+    transferCheck.checked = nuevoModo === "SALIDA" ? transferCheck.checked : false;
+    transferCheck.closest(".transfer-toggle")?.classList.toggle("hidden", nuevoModo !== "SALIDA");
+  }
+
+  if (operarioSalida) operarioSalida.required = nuevoModo === "SALIDA";
+  if (operarioIngreso) operarioIngreso.required = nuevoModo === "INGRESO";
 
   botones.forEach(boton => {
     const activo = boton.dataset.vista === nuevoModo;
     boton.classList.toggle("active", activo);
     boton.setAttribute("aria-pressed", String(activo));
   });
-
-  if (nuevoModo === "INGRESO") {
-    const transferCheck = document.getElementById("checkEsTransfer");
-    if (transferCheck) transferCheck.checked = false;
-  }
 }
 
 function actualizarRutas() {
@@ -121,7 +182,7 @@ function agregarDocumento(codigoDoc) {
   const esTransfer = modoVista === "SALIDA" && document.getElementById("checkEsTransfer").checked;
   const documento = {
     codigoDoc: codigo,
-    tipoDoc: modoVista === "INGRESO" ? "INGRESO" : document.querySelector("input[name='tipoDoc']:checked")?.value || "SALIDA",
+    tipoDoc: modoVista === "INGRESO" ? "INGRESO" : "SALIDA",
     esTransfer,
     transferChecklist: null
   };
@@ -134,31 +195,45 @@ function registrarDocumento(documento) {
     ? (document.getElementById("operarioIngreso")?.value || document.getElementById("operario")?.value || "")
     : (document.getElementById("operario")?.value || "");
   const ruta = document.getElementById("ruta")?.value || "";
+  const cantidades = {
+    cubetas: obtenerCantidad("cantidadCubetas"),
+    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+    bultos: obtenerCantidad("cantidadBultos")
+  };
 
-  if (modoVista === "SALIDA" && (!operario || !ruta)) {
-    alert("Seleccione el operario y la ruta antes de escanear.");
+  if (!operario) {
+    alert("Ingrese el operario antes de escanear.");
+    return;
+  }
+
+  if (modoVista === "SALIDA" && !ruta) {
+    alert("Seleccione la ruta antes de escanear.");
     return;
   }
 
   guardarOperarioEnCache();
+  mostrarCargaLote("Cargando lote...");
   procesandoEscaneo = true;
-  const registro = { operario, ruta, turno: obtenerTurno(), documento };
+  const documentoFinal = { ...documento, ...cantidades };
+  const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
 
   const registrado = () => {
-    documentos.push(documento);
+    documentos.push(documentoFinal);
     renderizarDocumentos();
+    ocultarCargaLote();
     procesandoEscaneo = false;
   };
 
   const fallido = error => {
     alert(`No se pudo registrar el documento: ${error.message || error}`);
+    ocultarCargaLote();
     procesandoEscaneo = false;
   };
 
   if (typeof google !== "undefined" && google.script && google.script.run) {
     google.script.run.withSuccessHandler(registrado).withFailureHandler(fallido).registrarDocumento(registro);
   } else {
-    setTimeout(registrado, 0);
+    setTimeout(registrado, 350);
   }
 }
 
@@ -186,8 +261,13 @@ function guardarLote(evento) {
     : (document.getElementById("operario")?.value || "");
   const ruta = document.getElementById("ruta")?.value || "";
 
-  if (modoVista === "SALIDA" && (!operario || !ruta)) {
-    alert("Seleccione operario y ruta antes de finalizar.");
+  if (!operario) {
+    alert("Complete el operario antes de finalizar.");
+    return;
+  }
+
+  if (modoVista === "SALIDA" && !ruta) {
+    alert("Seleccione la ruta antes de finalizar.");
     return;
   }
 
@@ -196,7 +276,11 @@ function guardarLote(evento) {
     return;
   }
 
-  alert(`Se registraron ${documentos.length} documento(s) durante el turno.`);
+  mostrarCargaLote("Finalizando lote...");
+  setTimeout(() => {
+    ocultarCargaLote();
+    alert(`Se registraron ${documentos.length} documento(s) durante el turno.`);
+  }, 400);
 }
 
 function renderizarHistorial(historial) {
