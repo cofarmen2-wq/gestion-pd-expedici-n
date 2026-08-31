@@ -398,6 +398,9 @@ function guardarLote(evento) {
     operario,
     ruta,
     turno: obtenerTurno(),
+    cubetas: obtenerCantidad("cantidadCubetas"),
+    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+    bultos: obtenerCantidad("cantidadBultos"),
     documentos: loteSinDuplicados.map(doc => ({
       ...doc,
       numeroLote: doc.numeroLote || doc.codigoDoc,
