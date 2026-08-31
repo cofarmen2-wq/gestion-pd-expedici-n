@@ -215,13 +215,32 @@ function registrarDocumento(documento) {
   const documentoFinal = { ...documento, ...cantidades };
   const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
 
-  const registrado = () => {
-    documentos.push(documentoFinal);
-    renderizarDocumentos();
+  // Petición HTTP POST al Web App de Google Apps Script
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+    body: JSON.stringify({ accion: "registrarDocumento", datos: registro })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      documentos.push(documentoFinal);
+      renderizarDocumentos();
+    } else {
+      alert(`Error en el servidor: ${data.message}`);
+    }
+  })
+  .catch(error => {
+    alert(`No se pudo registrar el documento: ${error.message || error}`);
+  })
+  .finally(() => {
     ocultarCargaLote();
     procesandoEscaneo = false;
-  };
-
+  });
+}
   const fallido = error => {
     alert(`No se pudo registrar el documento: ${error.message || error}`);
     ocultarCargaLote();
