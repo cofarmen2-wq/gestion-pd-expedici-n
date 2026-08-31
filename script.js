@@ -7,6 +7,58 @@ const OPERARIOS_CACHE_KEY = "operariosCache";
 const ULTIMO_OPERARIO_KEY = "ultimoOperario";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyTNx8YSY3ry1cg3k78ldOHtNLFdFfJwNXHuj_ng8bNEVxUch8tzecdPrwV3UHFkngDg/exec";
 
+function enviarSolicitudAppsScript({ accion, datos = null, metodo = "POST" }) {
+  if (typeof google !== "undefined" && google && google.script && google.script.run) {
+    const accionFn = google.script.run[accion];
+    if (typeof accionFn === "function") {
+      return new Promise((resolve, reject) => {
+        google.script.run.withSuccessHandler((resultado) => resolve(resultado))
+          .withFailureHandler((error) => reject(error))[accion](datos);
+      });
+    }
+  }
+
+  const url = metodo === "GET"
+    ? `${SCRIPT_URL}?accion=${encodeURIComponent(accion)}`
+    : SCRIPT_URL;
+
+  const opciones = {
+    method: metodo,
+    mode: "cors",
+    cache: "no-store",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }
+  };
+
+  if (metodo === "POST") {
+    opciones.body = JSON.stringify({ accion, datos });
+  }
+
+  return fetch(url, opciones)
+    .then(async response => {
+      const texto = await response.text();
+      let payload = {};
+
+      try {
+        payload = texto ? JSON.parse(texto) : {};
+      } catch (error) {
+        payload = { status: "ERROR", message: texto || "Error de respuesta vacía." };
+      }
+
+      if (!response.ok) {
+        throw new Error(payload && payload.message ? payload.message : `HTTP ${response.status}`);
+      }
+
+      return payload;
+    })
+    .catch(error => {
+      const mensaje = error && error.message ? error.message : String(error);
+      if (mensaje.toLowerCase().includes("failed to fetch") || mensaje.toLowerCase().includes("networkerror")) {
+        throw new Error("No se pudo conectar con Apps Script. Revisá que el Web App esté publicado y la URL sea correcta.");
+      }
+      throw new Error(mensaje);
+    });
+}
+
 const rutasPorTurno = {
   MAÑANA: ["Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"],
   TARDE: ["General Alvear", "Zona sur (Mañana: San Rafael 1; San Rafael 2)", "Tunuyan-San Carlos", "La Paz", "San Martin-Beltran", "Tupungato", "San Martín", "Rivadavia-Junin", "Maipú", "Lavalle", "San José", "Lujan de Cuyo", "Benegas-L de Cuyo", "Benegas", "Ciudad Norte", "Dorrego", "Godoy Cruz-Ciudad", "Ciudad Oeste", "Villanueva", "Godoy Cruz", "Villanueva-Coquimbito", "Las Heras 1", "Las Heras 2", "Villa Hipodromo", "Ciudad Este"],
@@ -270,15 +322,7 @@ function registrarDocumento(documento) {
   const documentoFinal = { ...documento, numeroLote: documento.numeroLote || documento.codigoDoc, codigoDoc: documento.codigoDoc || documento.numeroLote, ...cantidades };
   const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    body: JSON.stringify({ accion: "registrarDocumento", datos: registro })
-  })
-  .then(response => response.json())
+  enviarSolicitudAppsScript({ accion: "registrarDocumento", datos: registro, metodo: "POST" })
   .then(data => {
     const status = data && data.status;
     if (status === "OK" || status === "success" || status === "SUCCESS") {
@@ -364,13 +408,7 @@ function guardarLote(evento) {
     }))
   };
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ accion: "guardarRegistros", datos: payload })
-  })
-    .then(response => response.json())
+  enviarSolicitudAppsScript({ accion: "guardarRegistros", datos: payload, metodo: "POST" })
     .then(data => {
       const status = data && (data.status || data.estado);
       const omitidos = Array.isArray(data && data.omitidos) ? data.omitidos : [];
@@ -420,8 +458,7 @@ function abrirHistorial() {
   document.getElementById("drawer").classList.remove("hidden");
   document.getElementById("drawerBackdrop").classList.remove("hidden");
 
-  fetch(`${SCRIPT_URL}?accion=obtenerHistorialReciente`)
-    .then(response => response.json())
+  enviarSolicitudAppsScript({ accion: "obtenerHistorialReciente", metodo: "GET" })
     .then(historial => {
       renderizarHistorial(historial);
     })
