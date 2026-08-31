@@ -206,6 +206,7 @@ function limpiarFormulario() {
     ruta.value = "";
   }
 
+  setModoVista("SALIDA");
   procesandoEscaneo = false;
 }
 
@@ -332,13 +333,67 @@ function guardarLote(evento) {
     return;
   }
 
+  const loteSinDuplicados = modoVista === "SALIDA"
+    ? documentos.filter(doc => {
+        const codigo = String(doc.codigoDoc || "").trim();
+        const yaExiste = codigo && documentos.some(otro => String(otro.codigoDoc || "").trim() === codigo && otro !== doc);
+        return !yaExiste;
+      })
+    : [...documentos];
+
+  if (!loteSinDuplicados.length) {
+    alert("No hay documentos válidos para registrar en la vista de salida.");
+    return;
+  }
+
   mostrarCargaLote("Finalizando lote...");
-  setTimeout(() => {
-    ocultarCargaLote();
-    const totalRegistrados = documentos.length;
-    limpiarFormulario();
-    alert(`Se registraron ${totalRegistrados} documento(s) durante el turno.`);
-  }, 400);
+  const payload = {
+    operario,
+    ruta,
+    turno: obtenerTurno(),
+    documentos: loteSinDuplicados.map(doc => ({
+      ...doc,
+      cubetas: obtenerCantidad("cantidadCubetas"),
+      cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+      bultos: obtenerCantidad("cantidadBultos")
+    }))
+  };
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ accion: "guardarRegistros", datos: payload })
+  })
+    .then(response => response.json())
+    .then(data => {
+      const status = data && (data.status || data.estado);
+      const omitidos = Array.isArray(data && data.omitidos) ? data.omitidos : [];
+      const totalRegistrados = Number(data && data.count) || loteSinDuplicados.length;
+
+      if (status === "OK" || status === "success" || status === "SUCCESS" || totalRegistrados > 0) {
+        if (modoVista === "SALIDA") {
+          const validos = documentos.filter(doc => loteSinDuplicados.includes(doc));
+          documentos.splice(0, documentos.length, ...validos);
+        }
+
+        ocultarCargaLote();
+        limpiarFormulario();
+
+        if (omitidos.length) {
+          alert(`Se registraron ${totalRegistrados} documento(s). Se omitieron ${omitidos.length} duplicado(s): ${omitidos.join(", ")}.`);
+        } else {
+          alert(`Se registraron ${totalRegistrados} documento(s) durante el turno.`);
+        }
+        return;
+      }
+
+      throw new Error(data && data.message ? data.message : "Error al registrar el lote.");
+    })
+    .catch(error => {
+      ocultarCargaLote();
+      alert(error.message || "No se pudo finalizar el lote.");
+    });
 }
 
 function renderizarHistorial(historial) {
