@@ -63,31 +63,25 @@ function cargarOperariosDesdeCache() {
   });
 }
 
-function mostrarCargaLote(mensaje = "Cargando lote...") {
+function mostrarCargaLote(mensaje = "Cargando datos") {
   const contenedor = document.getElementById("loadingBarContainer");
-  const barra = document.getElementById("loadingBar");
   const texto = document.getElementById("loadingBarText");
   const porcentaje = document.getElementById("loadingBarPercent");
-  if (!contenedor || !barra || !texto || !porcentaje) return;
+  if (!contenedor || !texto || !porcentaje) return;
 
   contenedor.classList.remove("hidden");
-  texto.textContent = mensaje;
-  porcentaje.textContent = "0%";
-  barra.style.width = "0%";
+  texto.textContent = "Cargando datos";
+  porcentaje.textContent = mensaje === "Cargando datos" ? "procesando lote..." : mensaje;
 
   if (loteLoadingTimer) clearInterval(loteLoadingTimer);
-
-  let progreso = 0;
-  loteLoadingTimer = setInterval(() => {
-    progreso = Math.min(progreso + 20, 92);
-    barra.style.width = `${progreso}%`;
-    porcentaje.textContent = `${progreso}%`;
-  }, 180);
+  loteLoadingTimer = setTimeout(() => {
+    texto.textContent = "Cargando datos";
+    porcentaje.textContent = "procesando lote...";
+  }, 120);
 }
 
 function ocultarCargaLote() {
   const contenedor = document.getElementById("loadingBarContainer");
-  const barra = document.getElementById("loadingBar");
   const texto = document.getElementById("loadingBarText");
   const porcentaje = document.getElementById("loadingBarPercent");
 
@@ -96,17 +90,15 @@ function ocultarCargaLote() {
     loteLoadingTimer = null;
   }
 
-  if (barra) barra.style.width = "100%";
-  if (porcentaje) porcentaje.textContent = "100%";
-  if (texto) texto.textContent = "Lote cargado";
+  if (texto) texto.textContent = "Proceso finalizado";
+  if (porcentaje) porcentaje.textContent = "datos actualizados";
 
   if (contenedor) {
     setTimeout(() => {
       contenedor.classList.add("hidden");
-      if (barra) barra.style.width = "0%";
-      if (porcentaje) porcentaje.textContent = "0%";
-      if (texto) texto.textContent = "Cargando lote...";
-    }, 350);
+      if (texto) texto.textContent = "Cargando datos";
+      if (porcentaje) porcentaje.textContent = "procesando lote...";
+    }, 900);
   }
 }
 
