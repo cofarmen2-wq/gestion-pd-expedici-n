@@ -104,13 +104,11 @@
           <div id="reader"></div>
         </div>
 
-        <div id="loadingBarContainer" class="loading-bar-container hidden" aria-live="polite">
-          <div class="loading-bar-header">
-            <span id="loadingBarText">Cargando lote...</span>
-            <span id="loadingBarPercent">0%</span>
-          </div>
-          <div class="loading-track">
-            <div id="loadingBar" class="loading-fill"></div>
+        <div id="loadingBarContainer" class="loading-overlay hidden" aria-live="polite">
+          <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <div id="loadingBarText" class="loading-title">Cargando datos</div>
+            <div id="loadingBarPercent" class="loading-subtitle">procesando lote...</div>
           </div>
         </div>
 
