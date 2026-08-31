@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Mercadería</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <!-- Nombre en minúsculas para coincidir con styles.css -->
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* Estilos y efecto hover para el logo */
     .logo-cofar {
       max-height: 45px;
       width: auto;
@@ -20,14 +18,31 @@
       transform: scale(1.08);
       filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
     }
+    .view-switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .view-switch {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .view-switch.active {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
   </style>
 </head>
 <body>
-
-  <!-- Barra Superior -->
   <header class="top-bar">
     <div class="logo-box">
-      <!-- Muestra LOGO COFAR.png con el efecto de iluminación al pasar el cursor -->
       <img src="LOGO%20COFAR.png" alt="Logo COFAR" class="logo-cofar">
     </div>
     <div class="title-box">
@@ -39,61 +54,67 @@
 
   <main class="container">
     <form id="mainForm">
-      
-      <!-- Controles Principales -->
       <div class="card">
-        <div class="form-group">
-          <label for="operario">Operario de Ingreso</label>
-          <select id="operario" required>
-            <option value="" disabled selected>Seleccione operario...</option>
-            <option value="Operario 1">Operario 1</option>
-            <option value="Operario 2">Operario 2</option>
-            <option value="Operario 3">Operario 3</option>
-            <option value="Operario 4">Operario 4</option>
-          </select>
+        <div class="view-switcher">
+          <button type="button" class="view-switch active" data-vista="SALIDA" aria-pressed="true">Documento de salida</button>
+          <button type="button" class="view-switch" data-vista="INGRESO" aria-pressed="false">Documentación ingreso</button>
         </div>
 
-        <div class="form-group">
-          <label for="ruta">Ruta de Reparto</label>
-          <select id="ruta" required>
-            <option value="" disabled selected>Seleccione ruta...</option>
-          </select>
+        <div id="vistaSalida">
+          <div class="form-group">
+            <label for="operario">Operario</label>
+            <select id="operario" required>
+              <option value="" disabled selected>Seleccione operario...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ruta">Ruta de Reparto</label>
+            <select id="ruta" required>
+              <option value="" disabled selected>Seleccione ruta...</option>
+            </select>
+          </div>
+
+          <div class="scan-type-selector">
+            <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
+            <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
+          </div>
+
+          <div class="transfer-toggle">
+            <label>
+              <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
+            </label>
+          </div>
+        </div>
+
+        <div id="vistaIngreso" class="hidden">
+          <div class="form-group">
+            <label for="operarioIngreso">Operario</label>
+            <select id="operarioIngreso">
+              <option value="" disabled selected>Seleccione operario...</option>
+            </select>
+          </div>
+          <p class="muted-text">Solo se escanea la documentación para emparejar con la base de datos.</p>
         </div>
       </div>
 
-      <!-- Zona de Escaneo Múltiple -->
       <div class="card scan-card">
         <h3>Escaneo de Documentación QR</h3>
-        <div class="scan-type-selector">
-          <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
-          <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
-        </div>
-
         <button type="button" id="btnToggleCamara" class="btn-camera">📷 Iniciar Escáner QR</button>
         <div id="reader-container" class="reader-container hidden">
           <div id="reader"></div>
         </div>
 
-        <div class="transfer-toggle">
-          <label>
-            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
-          </label>
-        </div>
-
-        <!-- Lista de Documentos Escaneados en Cola -->
         <div class="scanned-list-box">
           <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
           <ul id="listaDocs" class="doc-list"></ul>
         </div>
       </div>
 
-      <!-- Botón de Guardado -->
       <button type="submit" id="btnGuardar" class="btn-submit">FINALIZAR REGISTRO</button>
-
     </form>
   </main>
 
-  <!-- Drawer Lateral Historial -->
   <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
   <aside id="drawer" class="drawer hidden">
     <div class="drawer-header">
@@ -105,29 +126,6 @@
     </div>
   </aside>
 
-  <!-- Modal Push Checklist para TRANSFER -->
-  <div id="modalTransfer" class="modal-backdrop hidden">
-    <div class="modal">
-      <h3>Checklist Documentación TRANSFER</h3>
-      <p id="transferDocLabel" class="doc-badge-modal"></p>
-      
-      <div class="checklist-group">
-        <label>1. ¿Firma y sello correctos?
-          <select id="chk1"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>2. ¿Estado de la carga verificado?
-          <select id="chk2"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-        <label>3. ¿Número de precinto coincide?
-          <select id="chk3"><option value="SI">SI</option><option value="NO">NO</option></select>
-        </label>
-      </div>
-
-      <button type="button" id="btnConfirmTransfer" class="btn-submit">Confirmar Documento Transfer</button>
-    </div>
-  </div>
-
-  <!-- Nombre en minúsculas para coincidir con script.js -->
   <script src="script.js"></script>
 </body>
 </html>
