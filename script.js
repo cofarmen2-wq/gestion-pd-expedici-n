@@ -3,6 +3,7 @@ let lectorQr = null;
 let procesandoEscaneo = false;
 let modoVista = "SALIDA";
 let loteLoadingTimer = null;
+
 const OPERARIOS_CACHE_KEY = "operariosCache";
 const ULTIMO_OPERARIO_KEY = "ultimoOperario";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyTNx8YSY3ry1cg3k78ldOHtNLFdFfJwNXHuj_ng8bNEVxUch8tzecdPrwV3UHFkngDg/exec";
@@ -88,8 +89,10 @@ function leerOperariosCache() {
 function guardarOperarioEnCache() {
   const operarioActual = document.getElementById("operario")?.value || document.getElementById("operarioIngreso")?.value || "";
   if (!operarioActual) return;
+
   const cache = leerOperariosCache();
   const listaActualizada = [...new Set([operarioActual, ...cache])].slice(0, 20);
+
   localStorage.setItem(OPERARIOS_CACHE_KEY, JSON.stringify(listaActualizada));
   localStorage.setItem(ULTIMO_OPERARIO_KEY, operarioActual);
 }
@@ -97,6 +100,7 @@ function guardarOperarioEnCache() {
 function cargarOperariosDesdeCache() {
   const operariosBase = ["Operario 1", "Operario 2", "Operario 3", "Operario 4"];
   const operarios = [...new Set([...leerOperariosCache(), ...operariosBase])];
+
   const datalist = document.getElementById("operariosLista");
   if (datalist) {
     datalist.replaceChildren();
@@ -120,6 +124,7 @@ function mostrarCargaLote(mensaje = "Cargando datos") {
   const contenedor = document.getElementById("loadingBarContainer");
   const texto = document.getElementById("loadingBarText");
   const porcentaje = document.getElementById("loadingBarPercent");
+
   if (!contenedor || !texto || !porcentaje) return;
 
   contenedor.classList.remove("hidden");
@@ -190,6 +195,7 @@ function setModoVista(nuevoModo) {
 function actualizarRutas() {
   const selectorRuta = document.getElementById("ruta");
   if (!selectorRuta) return;
+
   const turno = obtenerTurno();
   const rutasDelTurno = rutasPorTurno[turno] && rutasPorTurno[turno].length ? rutasPorTurno[turno] : rutasPorTurno.NOCHE;
   const turnoMostrado = rutasDelTurno ? turno : "NOCHE";
@@ -209,18 +215,25 @@ function renderizarDocumentos() {
   const lista = document.getElementById("listaDocs");
   const total = document.getElementById("countDocs");
   if (!lista || !total) return;
+
   total.textContent = documentos.length;
   lista.replaceChildren();
+
   documentos.forEach((documento, indice) => {
-    const numeroLote = documento.numeroLote || documento.codigoDoc || "SIN LOTE";
+    const codigo = documento.codigoDoc || documento.numeroLote || "SIN DOCUMENTO";
     const item = document.createElement("li");
     item.className = "doc-item";
-    item.textContent = `${numeroLote} - ${documento.tipoDoc}${documento.esTransfer ? " - TRANSFER" : ""}`;
+    item.textContent = `${codigo} - ${documento.tipoDoc}${documento.esTransfer ? " - TRANSFER" : ""}`;
+
     const eliminar = document.createElement("button");
     eliminar.type = "button";
     eliminar.className = "btn-close";
     eliminar.textContent = "✕";
-    eliminar.addEventListener("click", () => { documentos.splice(indice, 1); renderizarDocumentos(); });
+    eliminar.addEventListener("click", () => {
+      documentos.splice(indice, 1);
+      renderizarDocumentos();
+    });
+
     item.appendChild(eliminar);
     lista.appendChild(item);
   });
@@ -265,16 +278,22 @@ function limpiarFormulario() {
 
 function agregarDocumento(codigoDoc) {
   const codigo = String(codigoDoc || "").trim();
-  const numeroLote = codigo;
-  if (procesandoEscaneo || !codigo || documentos.some(documento => (documento.numeroLote || documento.codigoDoc) === codigo)) return;
+  if (procesandoEscaneo || !codigo) return;
+
+  const yaExisteLocal = documentos.some(doc => String(doc.codigoDoc || doc.numeroLote || "").trim() === codigo);
+  if (yaExisteLocal) return;
 
   const esTransfer = modoVista === "SALIDA" && document.getElementById("checkEsTransfer").checked;
+
   const documento = {
-    numeroLote,
     codigoDoc: codigo,
+    numeroLote: codigo,
     tipoDoc: modoVista === "INGRESO" ? "INGRESO" : "SALIDA",
     esTransfer,
-    transferChecklist: null
+    transferChecklist: null,
+    cubetas: obtenerCantidad("cantidadCubetas"),
+    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+    bultos: obtenerCantidad("cantidadBultos")
   };
 
   registrarDocumento(documento);
@@ -284,12 +303,8 @@ function registrarDocumento(documento) {
   const operario = modoVista === "INGRESO"
     ? (document.getElementById("operarioIngreso")?.value || document.getElementById("operario")?.value || "")
     : (document.getElementById("operario")?.value || "");
+
   const ruta = document.getElementById("ruta")?.value || "";
-  const cantidades = {
-    cubetas: obtenerCantidad("cantidadCubetas"),
-    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
-    bultos: obtenerCantidad("cantidadBultos")
-  };
 
   if (!operario) {
     alert("Ingrese el operario antes de escanear.");
@@ -301,49 +316,61 @@ function registrarDocumento(documento) {
     return;
   }
 
-  const numeroLote = String(documento.numeroLote || documento.codigoDoc || "").trim();
-  if (!numeroLote) {
-    alert("El documento no tiene número de lote válido.");
+  const codigoDoc = String(documento.codigoDoc || documento.numeroLote || "").trim();
+  if (!codigoDoc) {
+    alert("El documento no tiene código válido.");
     return;
   }
 
-  if (modoVista === "SALIDA" && documentos.some(doc => String(doc.numeroLote || doc.codigoDoc || "").trim() === numeroLote)) {
-    alert(`El documento ${numeroLote} ya existe en la base de datos.`);
+  if (modoVista === "SALIDA" && documentos.some(doc => String(doc.codigoDoc || doc.numeroLote || "").trim() === codigoDoc)) {
+    alert(`El documento ${codigoDoc} ya existe en la base de datos.`);
     return;
-  }
-
-  if (modoVista === "INGRESO") {
-    // La validación de duplicado solo opera en la vista de salida.
   }
 
   guardarOperarioEnCache();
   mostrarCargaLote("Cargando lote...");
   procesandoEscaneo = true;
-  const documentoFinal = { ...documento, numeroLote: documento.numeroLote || documento.codigoDoc, codigoDoc: documento.codigoDoc || documento.numeroLote, ...cantidades };
-  const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
+
+  const documentoFinal = {
+    ...documento,
+    numeroLote: documento.numeroLote || documento.codigoDoc,
+    codigoDoc: documento.codigoDoc || documento.numeroLote,
+    cubetas: obtenerCantidad("cantidadCubetas"),
+    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+    bultos: obtenerCantidad("cantidadBultos")
+  };
+
+  const registro = {
+    operario,
+    ruta,
+    turno: obtenerTurno(),
+    documento: documentoFinal
+  };
 
   enviarSolicitudAppsScript({ accion: "registrarDocumento", datos: registro, metodo: "POST" })
-  .then(data => {
-    const status = data && data.status;
-    if (status === "OK" || status === "success" || status === "SUCCESS") {
-      documentos.push(documentoFinal);
-      renderizarDocumentos();
-    } else {
-      alert(data && data.message ? data.message : "Error en el servidor.");
-    }
-  })
-  .catch(error => {
-    alert(`No se pudo registrar el documento: ${error.message || error}`);
-  })
-  .finally(() => {
-    ocultarCargaLote();
-    procesandoEscaneo = false;
-  });
+    .then(data => {
+      const status = data && data.status;
+
+      if (status === "OK" || status === "success" || status === "SUCCESS") {
+        documentos.push(documentoFinal);
+        renderizarDocumentos();
+      } else {
+        alert(data && data.message ? data.message : "Error en el servidor.");
+      }
+    })
+    .catch(error => {
+      alert(`No se pudo registrar el documento: ${error.message || error}`);
+    })
+    .finally(() => {
+      ocultarCargaLote();
+      procesandoEscaneo = false;
+    });
 }
 
 function alternarCamara() {
   const contenedor = document.getElementById("reader-container");
   const boton = document.getElementById("btnToggleCamara");
+
   if (lectorQr) {
     lectorQr.stop().then(() => lectorQr.clear()).catch(() => {});
     lectorQr = null;
@@ -351,18 +378,32 @@ function alternarCamara() {
     boton.textContent = "📷 Iniciar Escáner QR";
     return;
   }
-  if (typeof Html5Qrcode === "undefined") { alert("No se pudo cargar el escáner QR."); return; }
+
+  if (typeof Html5Qrcode === "undefined") {
+    alert("No se pudo cargar el escáner QR.");
+    return;
+  }
+
   lectorQr = new Html5Qrcode("reader");
   contenedor.classList.remove("hidden");
   boton.textContent = "Detener Escáner QR";
-  lectorQr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, codigo => agregarDocumento(codigo)).catch(() => alert("No se pudo acceder a la cámara."));
+
+  lectorQr.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    codigo => agregarDocumento(codigo)
+  ).catch(() => {
+    alert("No se pudo acceder a la cámara.");
+  });
 }
 
 function guardarLote(evento) {
   evento.preventDefault();
+
   const operario = modoVista === "INGRESO"
     ? (document.getElementById("operarioIngreso")?.value || document.getElementById("operario")?.value || "")
     : (document.getElementById("operario")?.value || "");
+
   const ruta = document.getElementById("ruta")?.value || "";
 
   if (!operario) {
@@ -382,14 +423,13 @@ function guardarLote(evento) {
 
   const loteSinDuplicados = modoVista === "SALIDA"
     ? documentos.filter(doc => {
-        const codigo = String(doc.numeroLote || doc.codigoDoc || "").trim();
-        const yaExiste = codigo && documentos.some(otro => String(otro.numeroLote || otro.codigoDoc || "").trim() === codigo && otro !== doc);
-        return !yaExiste;
+        const codigo = String(doc.codigoDoc || doc.numeroLote || "").trim();
+        return !codigo || !documentos.some(otro => String(otro.codigoDoc || otro.numeroLote || "").trim() === codigo && otro !== doc);
       })
     : [...documentos];
 
   if (!loteSinDuplicados.length) {
-    alert("No hay documentos válidos para registrar en la vista de salida.");
+    alert("No hay documentos válidos para registrar.");
     return;
   }
 
@@ -398,36 +438,27 @@ function guardarLote(evento) {
     operario,
     ruta,
     turno: obtenerTurno(),
+    cubetas: obtenerCantidad("cantidadCubetas"),
+    cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
+    bultos: obtenerCantidad("cantidadBultos"),
     documentos: loteSinDuplicados.map(doc => ({
       ...doc,
       numeroLote: doc.numeroLote || doc.codigoDoc,
       codigoDoc: doc.codigoDoc || doc.numeroLote,
-      cubetas: obtenerCantidad("cantidadCubetas"),
-      cadenasFrio: obtenerCantidad("cantidadCadenasFrio"),
-      bultos: obtenerCantidad("cantidadBultos")
+      tipoDoc: doc.tipoDoc || "SALIDA",
+      esTransfer: !!doc.esTransfer
     }))
   };
 
   enviarSolicitudAppsScript({ accion: "guardarRegistros", datos: payload, metodo: "POST" })
     .then(data => {
       const status = data && (data.status || data.estado);
-      const omitidos = Array.isArray(data && data.omitidos) ? data.omitidos : [];
       const totalRegistrados = Number(data && data.count) || loteSinDuplicados.length;
 
       if (status === "OK" || status === "success" || status === "SUCCESS" || totalRegistrados > 0) {
-        if (modoVista === "SALIDA") {
-          const validos = documentos.filter(doc => loteSinDuplicados.includes(doc));
-          documentos.splice(0, documentos.length, ...validos);
-        }
-
         ocultarCargaLote();
         limpiarFormulario();
-
-        if (omitidos.length) {
-          alert(`Se registraron ${totalRegistrados} documento(s). Se omitieron ${omitidos.length} duplicado(s): ${omitidos.join(", ")}.`);
-        } else {
-          alert(`Se registraron ${totalRegistrados} documento(s) durante el turno.`);
-        }
+        alert(`Se registraron ${totalRegistrados} documento(s) durante el turno.`);
         return;
       }
 
@@ -442,14 +473,16 @@ function guardarLote(evento) {
 function renderizarHistorial(historial) {
   const contenedor = document.getElementById("historialContent");
   contenedor.replaceChildren();
+
   if (!historial || !historial.length) {
     contenedor.textContent = "Sin registros recientes.";
     return;
   }
+
   historial.forEach(registro => {
     const tarjeta = document.createElement("div");
     tarjeta.className = "history-card";
-    tarjeta.textContent = `${registro.operario} | ${registro.ruta} | Puesta: ${registro.puestaDisposicion || "-"} | Recepción: ${registro.recepcion || "Pendiente"}`;
+    tarjeta.textContent = `${registro.operario} | ${registro.ruta} | Lote: ${registro.lote || "-"} | Salida: ${registro.salida || "Pendiente"} | Rec: ${registro.carga || "Pendiente"}`;
     contenedor.appendChild(tarjeta);
   });
 }
@@ -482,6 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnOpenDrawer").addEventListener("click", abrirHistorial);
   document.getElementById("btnCloseDrawer").addEventListener("click", cerrarHistorial);
   document.getElementById("drawerBackdrop").addEventListener("click", cerrarHistorial);
+
   document.querySelectorAll(".view-switch").forEach(boton => {
     boton.addEventListener("click", () => setModoVista(boton.dataset.vista));
   });
