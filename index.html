@@ -63,9 +63,7 @@
         <div id="vistaSalida">
           <div class="form-group">
             <label for="operario">Operario</label>
-            <select id="operario" required>
-              <option value="" disabled selected>Seleccione operario...</option>
-            </select>
+            <input type="text" id="operario" list="operariosLista" placeholder="Ingrese el operario..." required>
           </div>
 
           <div class="form-group">
@@ -75,26 +73,27 @@
             </select>
           </div>
 
-          <div class="scan-type-selector">
-            <label><input type="radio" name="tipoDoc" value="SALIDA" checked> Doc. Salida</label>
-            <label><input type="radio" name="tipoDoc" value="INGRESO"> Doc. Ingreso</label>
-          </div>
-
-          <div class="transfer-toggle">
-            <label>
-              <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
-            </label>
+          <div class="form-group metric-grid">
+            <div>
+              <label for="cantidadCubetas">Cantidad de cubetas</label>
+              <input type="number" id="cantidadCubetas" min="0" value="0">
+            </div>
+            <div>
+              <label for="cantidadCadenasFrio">Cantidad de cadenas de frío</label>
+              <input type="number" id="cantidadCadenasFrio" min="0" value="0">
+            </div>
+            <div>
+              <label for="cantidadBultos">Cantidad de bultos</label>
+              <input type="number" id="cantidadBultos" min="0" value="0">
+            </div>
           </div>
         </div>
 
         <div id="vistaIngreso" class="hidden">
           <div class="form-group">
             <label for="operarioIngreso">Operario</label>
-            <select id="operarioIngreso">
-              <option value="" disabled selected>Seleccione operario...</option>
-            </select>
+            <input type="text" id="operarioIngreso" list="operariosLista" placeholder="Ingrese el operario..." required>
           </div>
-          <p class="muted-text">Solo se escanea la documentación para emparejar con la base de datos.</p>
         </div>
       </div>
 
@@ -105,9 +104,25 @@
           <div id="reader"></div>
         </div>
 
+        <div id="loadingBarContainer" class="loading-bar-container hidden" aria-live="polite">
+          <div class="loading-bar-header">
+            <span id="loadingBarText">Cargando lote...</span>
+            <span id="loadingBarPercent">0%</span>
+          </div>
+          <div class="loading-track">
+            <div id="loadingBar" class="loading-fill"></div>
+          </div>
+        </div>
+
         <div class="scanned-list-box">
           <h4>Documentos en Lote (<span id="countDocs">0</span>)</h4>
           <ul id="listaDocs" class="doc-list"></ul>
+        </div>
+
+        <div class="transfer-toggle">
+          <label>
+            <input type="checkbox" id="checkEsTransfer"> ¿Es Documentación TRANSFER?
+          </label>
         </div>
       </div>
 
@@ -125,6 +140,8 @@
       <p class="loading-text">Cargando datos...</p>
     </div>
   </aside>
+
+  <datalist id="operariosLista"></datalist>
 
   <script src="script.js"></script>
 </body>
