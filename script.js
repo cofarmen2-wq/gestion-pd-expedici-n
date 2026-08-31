@@ -215,7 +215,6 @@ function registrarDocumento(documento) {
   const documentoFinal = { ...documento, ...cantidades };
   const registro = { operario, ruta, turno: obtenerTurno(), documento: documentoFinal };
 
-  // Petición HTTP POST al Web App de Google Apps Script
   fetch(SCRIPT_URL, {
     method: "POST",
     mode: "cors",
@@ -240,18 +239,6 @@ function registrarDocumento(documento) {
     ocultarCargaLote();
     procesandoEscaneo = false;
   });
-}
-  const fallido = error => {
-    alert(`No se pudo registrar el documento: ${error.message || error}`);
-    ocultarCargaLote();
-    procesandoEscaneo = false;
-  };
-
-  if (typeof google !== "undefined" && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(registrado).withFailureHandler(fallido).registrarDocumento(registro);
-  } else {
-    setTimeout(registrado, 350);
-  }
 }
 
 function alternarCamara() {
